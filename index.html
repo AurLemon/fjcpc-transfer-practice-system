@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计大船政转轨考の刷题系统</title>
+    <link rel="stylesheet" href="resources/static/styles.css">
+    <link rel="icon" href="resources/images/favicon.png" type="image/png">
+</head>
+<body>
+    <script src="assets/jquery/jquery-3.7.1.min.js"></script>
+    <main class="page-container">
+        
+
+            <div class="page-container-main-wrapper">  
+                <div class="page-container-slide page-view">
+                    <div class="page-view-output">
+                    </div>
+                    <div class="page-view-tools">
+                        <select id="view-subject-choose">
+                            <option value="0">专业基础</option>
+                            <option value="1">语文（文化基础）</option>
+                            <option value="2">数学（文化基础）</option>
+                            <option value="3">英语（文化基础）</option>
+                            <option value="4">思想政治（文化基础）</option>
+                            <option value="-1">全部</option>
+                        </select>
+                        <select id="view-subject-type">
+                            <option value="0">单选题</option>
+                            <option value="1">多选题</option>
+                            <option value="2">判断题</option>
+                            <option value="8">阅读题</option>
+                        </select>
+                        <button onclick="mainModule.updateViewLoad()">加载</button>
+                    </div>
+                </div>
+                <div class="page-container-slide page-star">
+                    <div class="page-star-switch">
+                        <div class="page-star-switch__list">
+                            <button onclick="mainModule.updateStarLoad();if (JSON.parse(localStorage.getItem('starQuestionSets')) == null || JSON.parse(localStorage.getItem('starQuestionSets')) <= 0) mainModule.showMessage('error', '没错题啊 收藏空的');" class="page-star-switch__item">点这个按钮才能加载，不想写事件了</button>
+                        </div>
+                    </div>
+                    <div class="page-star-output"></div>
+                </div>
+                <div class="page-container-slide page-statistics">
+                    <div class="page-statistics-title">统计</div>
+                    <div class="page-statistics-text">不知道放什么，就这两个吧，全班做题进度链接在页面最底下的“用户做题统计”</div>
+                    <div class="page-statistics-wrapper" id="countdown">
+                        <div class="page-statistics-label">已做题目量</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper" id="star-rate">
+                        <div class="page-statistics-label">收藏题目量</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper" id="finish-rate">
+                        <div class="page-statistics-label">完成进度</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper" id="star-done-rate">
+                        <div class="page-statistics-label">收藏题占已做题的比率（约等于错误率）</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper">
+                        <div class="page-statistics-label">各科题目完成情况（后面没括号的是专业课）</div>
+                        <div class="page-statistics-wrapper" id="subject-done-progress"></div>
+                    </div>
+                </div>
+                <div class="page-container-slide page-advanced">
+                    <div class="page-advanced-wrapper">
+                        <div class="page-advanced-title">设置</div>
+                        <div class="page-advanced-settings">
+                            <div class="page-advanced-setting">
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="advanced-autostar-wrong" />
+                                    <label for="advanced-autostar-wrong">自动收藏错题</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="advanced-connect-backend" />
+                                    <label for="advanced-connect-backend">连接服务器（不勾选到时候换个浏览器做题进度就没了）</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="auto-sync" />
+                                    <label for="auto-sync">自动检查数据是否同步</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="public-stat" />
+                                    <label for="public-stat">公开自己的做题数据</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <button id="reset-questions-done">重置本地做题进度</button>
+                                    <button id="reset-questions-star">重置本地收藏夹</button>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <button id="reset-backend-questions-done">重置服务器做题进度（不可恢复 想清楚）</button>
+                                    <button id="reset-backend-questions-star">重置服务器收藏夹（不可恢复 想清楚）</button>
+                                </div>
+                            </div>
+                            <div class="page-advanced-score">
+                                <div class="page-advanced-score--desc"><span style="color: var(--color-surface-4);">倒反天罡：</span>下面的按钮和你点“交卷”一个效果 想要多少分都行</div>
+                                <div class="page-advanced-score--form">
+                                    <select id="ifpass-type">
+                                        <option value="1">合格</option>
+                                        <option value="2">不合格</option>
+                                    </select>
+                                    <select id="score-type">
+                                        <option value="1">文化基础</option>
+                                        <option value="32">专业基础</option>
+                                    </select>        
+                                    <input type="text" id="score-number" placeholder="你想要多少分？专业200文化300" />
+                                    <button onclick="mainModule.startScoreRequest()">别太高了，点我交</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page-advanced-log" id="output-log"></div>
+                </div>
+            </div>
+     
+    </main>
+    <script type="text/javascript">
+        var loadModule=function(){let a={},b={};return $.ajax({url:"https://lemon-1254268741.cos.ap-shanghai.myqcloud.com/questionSets.json",method:"GET",async:!1,success:function(b){a=b,console.log("questionSets.json \u5DF2\u52A0\u8F7D")},error:function(a,b,c){console.log("\u52A0\u8F7DquestionSets.json\u51FA\u9519:"+c)}}),$.ajax({url:"https://lemon-1254268741.cos.ap-shanghai.myqcloud.com/exerciseSets.json",method:"GET",async:!1,success:function(a){b=a,console.log("exerciseSets.json \u5DF2\u52A0\u8F7D")},error:function(a,b,c){console.log("\u52A0\u8F7DexerciseSets.json\u51FA\u9519:"+c)}}),function(a,b){var c=document.createElement("script");return c.src=a,c.onload=c.onerror=function(){c.parentNode&&c.parentNode.removeChild(c),b&&(b(),b=null)},document.head.appendChild(c),c}("libraries/main.js"),{exerciseSets:b,questionSets:a}}();
+    </script>
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "m61b0fjnza");
+    </script>
+</body>
+</html>
