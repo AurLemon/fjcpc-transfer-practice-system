@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计大船政转轨考の刷题系统</title>
+    <link rel="stylesheet" href="resources/static/styles.css">
+    <link rel="icon" href="resources/images/favicon.png" type="image/png">
+</head>
+<body>
+    <!-- 这是个纯静态页面 这就是个index.html 写PHP很累啊！这个刷题网站主要就是靠JS实现的，力大砖飞，题库其实是1.7M的超大json 解析成对象直接加载 -->
+    <!-- by the way: 在工贸的三年 感谢几位老师 -->
+    <!-- ludeng & csz & lige 和其他几位水课的老师-->
+    <script src="assets/jquery/jquery-3.7.1.min.js"></script>
+    <nav class="page-menu">
+        <div class="page-menu-wrapper">
+            <div class="page-menu-title">计大船政转轨考の刷题系统2.0</div>
+            <div class="page-menu-list">
+                <div class="page-menu-link" style="filter: brightness(125%)"><a href="https://wiki.hydcraft.cn/Player:%E6%9F%A0%E6%AA%AC" target="_blank"><img src="resources/images/logo_contributor.jpg" alt="项目开发者头像"></a></div>
+                <div class="page-menu-link"><a href="https://fjgmxx.cn" target="_blank"><img src="resources/images/logo_fjgm.png" alt="福建工贸学校"></a></div>
+                <div class="page-menu-link"><a href="https://www.fjcpc.edu.cn/" target="_blank"><img src="resources/images/logo_fjcpc.png" alt="福建船政交通职业学院"></a></div>
+                <div class="page-menu-link"><a href="https://gitee.com/aurlemon/fjcpc-transfer-qb" target="_blank"><img src="resources/images/logo_gitee.svg" alt="Gitee 项目地址"></a></div>
+            </div>
+        </div>
+    </nav>
+    <main class="page-container">
+        <div class="page-container-panel">
+            <div class="container-panel-countdown">
+                <div class="container-panel-header-countdown" id="total-countdown">
+                    <div class="container-panel-header-countdown__value">-</div>
+                    <div class="container-panel-header-countdown__label">题目总数</div>
+                </div>
+                <div class="container-panel-header-countdown" id="prof-countdown">
+                    <div class="container-panel-header-countdown__value">-</div>
+                    <div class="container-panel-header-countdown__label">专业课题目数</div>
+                </div>
+                <div class="container-panel-header-countdown" id="general-countdown">
+                    <div class="container-panel-header-countdown__value">-</div>
+                    <div class="container-panel-header-countdown__label">文化课题目数</div>
+                </div>
+                <div class="container-panel-header-countdown" id="exam-countdown">
+                    <div class="container-panel-header-countdown__value">-</div>
+                    <div class="container-panel-header-countdown__label">距离转轨考还有（天）</div>
+                </div>
+            </div>
+            <div class="container-panel-status">
+                <div class="container-panel-status__label" id="progress-sync-status"><span class="container-panel-status__color"></span><span class="container-panel-status__text">-</span></div>
+                <div class="container-panel-status__progress" id="backend-status">
+                    <div class="container-panel-status__progressLabel">做题进度<span id="student-progress">-</span></div>
+                    <div class="container-panel-status__progressWrapper">
+                        <div class="container-panel-status__progressScroll"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="container-panel-profile">
+                <div class="container-panel-profile__greeting">-</div>
+                <div class="container-panel-profile__inner">
+                    <div class="container-panel-profile__idnumber">-</div>
+                    <div class="container-panel-profile__buttons">
+                        <div class="container-panel-profile__button container-panel-profile__edit"><img src="resources/images/icon_edit.svg"></div>
+                        <div class="container-panel-profile__button container-panel-profile__delete"><img src="resources/images/icon_delete.svg"></div>
+                        <div style="display: none;" class="container-panel-profile__button container-panel-profile__done"><img src="resources/images/icon_done.svg"></div>
+                    </div>
+                </div>
+                <div class="container-panel-profile__detail">-</div>
+            </div>
+        </div>
+        <div class="page-container-main">
+            <div class="page-container-main-tools">
+                <div class="active page-container-main-tools__button" id="guide-button">引导</div>
+                <div class="page-container-main-tools__button" id="practice-button">刷题</div>
+                <div class="page-container-main-tools__button" id="view-button">看题</div>
+                <div class="page-container-main-tools__button" id="star-button">收藏</div>
+                <div class="page-container-main-tools__button" id="statistics-button">统计</div>
+                <div class="page-container-main-tools__button" id="advanced-button">设置</div>
+            </div>
+            <div class="page-container-main-wrapper">
+                <div class="page-container-slide page-guide">
+                    <h2>哦哈哟同学🤓☝</h2>
+                    <div class="page-guide-form">
+                        <div class="page-guide-form-title">保存身份证件信息（建议，可以不填，只有船政的系统里有你才能保存）</div>
+                        <div class="page-guide-form-sumbit">
+                            <input type="text" id="id-card" placeholder="请输入身份证号">
+                            <button onclick="mainModule.handleIdentity('add', $('#id-card').val());"><img src="resources/images/icon_done.svg" alt=""> 提交信息</button>
+                            <button onclick="mainModule.handleIdentity('delete')"><img src="resources/images/icon_delete.svg" alt=""> 清除信息</button>
+                            <button onclick="mainModule.handleIdentity('modify', $('#id-card').val())"><img src="resources/images/icon_refresh.svg" alt=""> 重置信息</button>
+                        </div>
+                    </div>
+                    <div class="page-guide-tips">😡😡😡 有bug赶快找<a href="https://qm.qq.com/q/kroi2TEapW">他(QQ 2115386831)</a>说，自信点就是我写的屎山网站的问题<br>网站会不定期更新CSS和JS，如果碰到问题先刷新页面，然后Ctrl+F5强制刷新缓存（手机: 清除浏览数据）</div>
+                    <div class="page-guide-block page-guide-update">
+                        <div class="page-guide-keyvalue">
+                            <div class="page-guide-keyvalue__value">2024-05-07 20:57</div>
+                            <div class="page-guide-keyvalue__key">最近更新时间</div>
+                        </div>
+                        <div class="page-guide-log">
+                            <li>
+                                <span class="page-guide-log__time">2024-05-06 20:57</span>
+                                <span class="page-guide-log__text"><b>应该修差不多了，接下来基本不会改了</b><br>新增：统计可以看每个科目的进度和收藏，可以根据这个去刷特定科目。<br>修复：题目去重、刷收藏的题目如果做错会取消收藏</span>
+                            </li>
+                            <li>
+                                <span class="page-guide-log__time">2024-05-06 00:55</span>
+                                <span class="page-guide-log__text">题目去重、刷收藏的题目如果做错会取消收藏、修复一直莫名其妙同步然后跳回去的bug、刷题可以刷收藏的题目、可以取消收藏题目、设置里可以调整做题数据给不给别人看、统计里可以看各个科目的完成进度和已收藏题量、电脑按回车下一题、修复部分浏览器看不到“下一题”的兼容性问题</span>
+                            </li>
+                            <li>
+                                <span class="page-guide-log__time">2024-05-06 00:42</span>
+                                <span class="page-guide-log__text">微调界面、新增统计、修修JS的小bug</span>
+                            </li>
+                            <li>
+                                <span class="page-guide-log__time">2024-05-05 01:32</span>
+                                <span class="page-guide-log__text">修复了题目都做完了看不了题库的bug、微调界面（CSS）</span>
+                            </li>
+                            <li>
+                                <span class="page-guide-log__time">2024-05-04 00:36</span>
+                                <span class="page-guide-log__text">支持多设备数据同步、没登陆没法收藏题目导致没法下一题的bug<span style="opacity: 0.4;">（22计大没人发现？）</span>、修复做题进度百分比没乘100的bug</span>
+                            </li>
+                            <li>
+                                <span class="page-guide-log__time">2024-05-03 11:23</span>
+                                <span class="page-guide-log__text">网站上线。</span>
+                            </li>
+                        </div>
+                    </div>
+                    <div class="page-guide-block page-guide-info">
+                        <div class="page-guide-keyvalue">
+                            <div class="page-guide-keyvalue__value">2024-05-12 20:53</div>
+                            <div class="page-guide-keyvalue__key">题库更新时间</div>
+                        </div>
+                        <div class="page-guide-keyvalue">
+                            <div class="page-guide-keyvalue__value">4</div>
+                            <div class="page-guide-keyvalue__key">题库新增（或修改）题目</div>
+                        </div>
+                        <div class="page-guide-keyvalue">
+                            <div class="page-guide-keyvalue__value">就一个政治多选变了答案，其它是变错字</div>
+                            <div class="page-guide-keyvalue__key">题库更新内容</div>
+                        </div>
+                    </div>
+                    <div class="page-guide-block page-guide-usage">
+                        <li class="page-guide-block__title">这是什么网站？</li>
+                        <li>船政转轨考做题的。和船政的网站有什么区别？我这有<b>全部题库</b>、<b>做完就能看答案</b>、<b>还能看错题集</b>、还能看正确率。</li>
+                        <li>题库怎么弄下来的，卷子不是题目随机组合吗？那我多弄几套卷子然后把所有题目整理起来不就可以了，撞库+去重。</li>
+                        <li>界面丑？两天搓的，还是在AI的帮助下，我觉得好看👍。</li>
+                        <li>有bug？群里或者私聊我一下，线下直接找我也可以。</li>
+                    </div>
+                    <div class="page-guide-block page-guide-faq">
+                        <li class="page-guide-block__title">不填身份证号可不可以？</li>
+                        <li>可以啊，但是做题记录只会保存到localStorage，不会同步，你别换浏览器就行，<b>如果你填了身份证号那就不用担心同步</b>，如果是其他网友想来做做题<b>完全不用填身份证</b>，也填不了，只有船政的系统里有登记你的身份证信息才有用</li>
+                        <li>你会不会泄露我们身份证号啊？<b>不会</b>，我把后端和前端都放gitee了，你不放心可以自己看代码😡 不填其实也没啥</li>
+                        <li>你这个网站怎么弄的？其实就是一个静态页面，配合jQuery做出来的，还有一个PHP后台存做题信息和题库</li>
+                        <li>如果要开始，可以点上面五个菜单中的“刷题”就可以开始做了哦！</li>
+                        <li>如果想看源代码，可以点右上角那个“G”图标，这个是 Gitee，简单理解成存代码的网站就可以了，GitHub 和这个是一类东西。</li>
+                    </div>
+                </div>    
+                <div class="page-container-slide page-practice">
+                    <div class="page-practice-info">
+                        <div class="page-practice-info__doing">-</div>
+                        <div class="page-practice-info__detail">
+                            <div class="page-practice-info__back"><img src="resources/images/icon_back.svg"></div>
+                            <div class="page-practice-info__volume">-/-</div>
+                            <div class="page-practice-info__forward"><img src="resources/images/icon_forward.svg"></div>
+                        </div>
+                        <div class="page-practice-info__pid">-</div>
+                        <div class="page-practice-info-sheet">
+                            <div class="page-practice-info-sheet__title">答题卡</div>
+                            <ul class="page-practice-info-sheet__list">
+                                <li class="done page-practice-info-sheet__item" onclick="mainModule.navigateToQuestion('100053973')" question-number="100053973"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="page-practice-question">
+                        <div class="page-practice-question__type"></div>
+                        <div class="page-practice-question--main">
+                        </div>
+                    </div>
+                    <div class="page-practice-tools">
+                        <div class="page-practice-question__answer">
+                            <div class="page-practice-question__answerWrapper" id="practice-true-answer">
+                                <div class="page-practice-question__label">正确答案</div>
+                                <div class="page-practice-question__value">-</div>
+                            </div>
+                            <div class="page-practice-question__answerWrapper" id="practice-selected-answer">
+                                <div class="page-practice-question__label">你的答案</div>
+                                <div class="page-practice-question__value">-</div>
+                            </div>
+                            <div class="page-practice-tools__check">
+                            <button class="page-practice-question__continue" id="practice-continue">检查</button>
+                            </div>
+                        </div>
+                        <div class="page-practice-tools__load">
+                            <select id="practice-subject-choose">
+                                <option value="0">专业基础</option>
+                                <option value="1">语文（文化基础）</option>
+                                <option value="2">数学（文化基础）</option>
+                                <option value="3">英语（文化基础）</option>
+                                <option value="4">思想政治（文化基础）</option>
+                                <option value="-1">全部</option>
+                                <option value="-2">已收藏题目</option>
+                            </select>
+                            <select id="practice-question-type">
+                                <option value="-1">全部题型</option>
+                                <option value="0">单选题</option>
+                                <option value="1">多选题</option>
+                                <option value="2">判断题</option>
+                                <option value="8">阅读题</option>
+                            </select>
+                            <select id="practice-random-choose">
+                                <option value="0">随机排序</option>
+                                <option value="1">顺序排序</option>
+                            </select>
+                            <button onclick="mainModule.updatePracticeLoad()" id="practice-confirm-answer">确认</button>
+                        </div>
+                        <div class="page-practice-tools__buttons">
+                            <div class="page-practice-tools__button" id="practice-feedback" onclick="mainModule.showMessage('success', '<span>反馈请加博主qq2115386831</span><span>题目的问题找班主任</span>', 3000)"><img src="resources/images/icon_feedback.svg"></div>
+                            <div class="page-practice-tools__button" id="practice-star" onclick="mainModule.toggleBookmark($('.page-practice-info__pid').text())"><img src="resources/images/icon_star.svg"></div>
+                        </div>
+                    </div>
+                </div>    
+                <div class="page-container-slide page-view">
+                    <div class="page-view-output">
+                    </div>
+                    <div class="page-view-tools">
+                        <select id="view-subject-choose">
+                            <option value="0">专业基础</option>
+                            <option value="1">语文（文化基础）</option>
+                            <option value="2">数学（文化基础）</option>
+                            <option value="3">英语（文化基础）</option>
+                            <option value="4">思想政治（文化基础）</option>
+                            <option value="-1">全部</option>
+                        </select>
+                        <select id="view-subject-type">
+                            <option value="0">单选题</option>
+                            <option value="1">多选题</option>
+                            <option value="2">判断题</option>
+                            <option value="8">阅读题</option>
+                        </select>
+                        <button onclick="mainModule.updateViewLoad()">加载</button>
+                    </div>
+                </div>
+                <div class="page-container-slide page-star">
+                    <div class="page-star-switch">
+                        <div class="page-star-switch__list">
+                            <button onclick="mainModule.updateStarLoad();if (JSON.parse(localStorage.getItem('starQuestionSets')) == null || JSON.parse(localStorage.getItem('starQuestionSets')) <= 0) mainModule.showMessage('error', '没错题啊 收藏空的');" class="page-star-switch__item">点这个按钮才能加载，不想写事件了</button>
+                        </div>
+                    </div>
+                    <div class="page-star-output"></div>
+                </div>
+                <div class="page-container-slide page-statistics">
+                    <div class="page-statistics-title">统计</div>
+                    <div class="page-statistics-text">不知道放什么，就这两个吧，全班做题进度链接在页面最底下的“用户做题统计”</div>
+                    <div class="page-statistics-wrapper" id="countdown">
+                        <div class="page-statistics-label">已做题目量</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper" id="star-rate">
+                        <div class="page-statistics-label">收藏题目量</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper" id="finish-rate">
+                        <div class="page-statistics-label">完成进度</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper" id="star-done-rate">
+                        <div class="page-statistics-label">收藏题占已做题的比率（约等于错误率）</div>
+                        <div class="page-statistics-value"></div>
+                    </div>
+                    <div class="page-statistics-wrapper">
+                        <div class="page-statistics-label">各科题目完成情况（后面没括号的是专业课）</div>
+                        <div class="page-statistics-wrapper" id="subject-done-progress"></div>
+                    </div>
+                </div>
+                <div class="page-container-slide page-advanced">
+                    <div class="page-advanced-wrapper">
+                        <div class="page-advanced-title">设置</div>
+                        <div class="page-advanced-settings">
+                            <div class="page-advanced-setting">
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="advanced-autostar-wrong" />
+                                    <label for="advanced-autostar-wrong">自动收藏错题</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="advanced-connect-backend" />
+                                    <label for="advanced-connect-backend">连接服务器（不勾选到时候换个浏览器做题进度就没了）</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="auto-sync" />
+                                    <label for="auto-sync">自动检查数据是否同步</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <input type="checkbox" id="public-stat" />
+                                    <label for="public-stat">公开自己的做题数据</label>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <button id="reset-questions-done">重置本地做题进度</button>
+                                    <button id="reset-questions-star">重置本地收藏夹</button>
+                                </div>
+                                <div class="page-advanced-setting__wrapper">
+                                    <button id="reset-backend-questions-done">重置服务器做题进度（不可恢复 想清楚）</button>
+                                    <button id="reset-backend-questions-star">重置服务器收藏夹（不可恢复 想清楚）</button>
+                                </div>
+                            </div>
+                            <div class="page-advanced-score">
+                                <div class="page-advanced-score--desc"><span style="color: var(--color-surface-4);">倒反天罡：</span>下面的按钮和你点“交卷”一个效果 想要多少分都行</div>
+                                <div class="page-advanced-score--form">
+                                    <select id="ifpass-type">
+                                        <option value="1">合格</option>
+                                        <option value="2">不合格</option>
+                                    </select>
+                                    <select id="score-type">
+                                        <option value="1">文化基础</option>
+                                        <option value="32">专业基础</option>
+                                    </select>        
+                                    <input type="text" id="score-number" placeholder="你想要多少分？专业200文化300" />
+                                    <button onclick="mainModule.startScoreRequest()">别太高了，点我交</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="page-advanced-log" id="output-log"></div>
+                </div>
+            </div>
+        </div>       
+    </main>
+    <footer class="page-footer">
+        <div class="page-footer-project">
+            <div class="page-footer-project__name"><span>AurLemon's Personal Practice Question Bank</span><span>for FJCPC Transfer Exam</span></div>
+            <div class="page-footer-project__link">
+                <a href="https://beian.miit.gov.cn/" target="_blank"><img src="resources/images/beian_miit.png" width="16" height="16">闽ICP备2023007345号-1</a>
+                <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank"><img src="resources/images/beian_mps.png" width="16" height="16">闽公网安备35010202001677号</a>
+                <a href="https://lemon.hydcraft.cn/stat" target="_blank"><img src="resources/images/favicon.png" width="16" height="16">用户做题统计</a>
+                <a href="https://appzb.fjcpc.edu.cn/kszx-test32/#/login" target="_blank"><img src="resources/images/logo_fjcpc.png" width="16" height="16">船政刷题登录</a>
+            </div>
+        </div>
+        <div class="page-footer-copyright">This project based on jQuery, coding and design by AurLemon (Lin Jun Le). © 2024 AurLemon under License MIT<br>工贸三年 谢谢教过我(们)的老师 特别是班主任/专业课/英语老师🌹 学生朽木 难以自雕 亦难自弃 愿工贸 春风育桃李 杏坛尽芳菲（除了教导队学生会）</div>
+    </footer>
+    <script type="text/javascript">
+        var loadModule=function(){let a={},b={};return $.ajax({url:"https://lemon-1254268741.cos.ap-shanghai.myqcloud.com/questionSets.json",method:"GET",async:!1,success:function(b){a=b,console.log("questionSets.json \u5DF2\u52A0\u8F7D")},error:function(a,b,c){console.log("\u52A0\u8F7DquestionSets.json\u51FA\u9519:"+c)}}),$.ajax({url:"https://lemon-1254268741.cos.ap-shanghai.myqcloud.com/exerciseSets.json",method:"GET",async:!1,success:function(a){b=a,console.log("exerciseSets.json \u5DF2\u52A0\u8F7D")},error:function(a,b,c){console.log("\u52A0\u8F7DexerciseSets.json\u51FA\u9519:"+c)}}),function(a,b){var c=document.createElement("script");return c.src=a,c.onload=c.onerror=function(){c.parentNode&&c.parentNode.removeChild(c),b&&(b(),b=null)},document.head.appendChild(c),c}("libraries/main.js"),{exerciseSets:b,questionSets:a}}();
+    </script>
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "m61b0fjnza");
+    </script>
+</body>
+</html>
