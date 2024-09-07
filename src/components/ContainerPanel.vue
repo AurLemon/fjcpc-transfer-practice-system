@@ -5,7 +5,8 @@ export default defineComponent({
     name: 'ContainerPanel',
     data() {
         return {
-            showPanel: false
+            showPanel: false,
+            totalCount: 0
         }
     }
 })
