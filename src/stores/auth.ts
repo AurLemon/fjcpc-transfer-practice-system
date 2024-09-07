@@ -9,11 +9,11 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     setToken(token: string) {
       this.token = token;
-      localStorage.setItem('token', token); // 同时更新 localStorage
+      localStorage.setItem('token', token);
     },
     setRefreshToken(refreshToken: string) {
       this.refreshToken = refreshToken;
-      localStorage.setItem('refresh_token', refreshToken); // 同时更新 localStorage
+      localStorage.setItem('refresh_token', refreshToken);
     }
   }
 });

@@ -1,6 +1,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
 
 import { sm2 } from 'sm-crypto-v2'
 import { get, post } from '@/api/api'
@@ -11,6 +12,7 @@ interface Data {
 }
 
 export default defineComponent({
+    name: 'LoginCard',
     data(): Data {
         return {
             id_number: '',
@@ -61,7 +63,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="page-login">
+    <div class="page-view-login">
         
     </div>
 </template>

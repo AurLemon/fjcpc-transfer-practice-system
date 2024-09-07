@@ -15,7 +15,7 @@ interface Data {
 
 // 创建 Axios 实例
 const apiClient = axios.create({
-    baseURL: process.env.VUE_APP_BASE_API,
+    baseURL: import.meta.env.VUE_APP_BASE_API,
     headers: {
         'Content-Type': 'application/json'
     }

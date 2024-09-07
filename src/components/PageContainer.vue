@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import ContainerPanel from './ContainerPanel.vue'
+import PageViewContainer from './PageViewContainer.vue'
 </script>
 
 <template>
@@ -59,12 +60,15 @@ import ContainerPanel from './ContainerPanel.vue'
             </div>
             <div class="page-container-main-wrapper">
                 <RouterView />
+                <PageViewContainer />
             </div>
         </div>
     </main>
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/styles/media_screen.scss' as screen;
+
 .page-container {
     --container-height: 75vh;
     --panel-width: 300px;
@@ -140,18 +144,18 @@ import ContainerPanel from './ContainerPanel.vue'
     }
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: screen.$media-screen-value-phone) {
     .page-container {
         --container-height: 75vh;
         margin: 0 20px 3rem 20px;
-    }
 
-    .page-container .page-container-main {
-        width: 100%;
-    }
+        .page-container-main {
+            width: 100%;
 
-    .page-container .page-container-main .page-container-main-tools {
-        bottom: calc(100% + 6px);
+            .page-container-main-tools {
+                bottom: calc(100% + 6px);
+            }
+        }
     }
 }
 </style>

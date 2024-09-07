@@ -1,12 +1,37 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { useCardStore } from '@/stores/card'
+import { useUserStore } from '@/stores/user'
 
 export default defineComponent({
     name: 'ContainerPanel',
     data() {
         return {
             showPanel: false,
-            totalCount: 0
+            totalCount: 0,
+            profileInfo: {}
+        }
+    },
+    methods: {
+        handleLoginCard(state: string) {
+            switch (state) {
+                case 'open':
+                    this.cardStore.showLoginCard = true
+                    break
+                case 'close':
+                    this.cardStore.showLoginCard = false
+                    break
+                default:
+                    break
+            }
+        }
+    },
+    setup() {
+        const cardStore = useCardStore()
+        const userStore = useUserStore()
+        return {
+            cardStore,
+            userStore
         }
     }
 })
@@ -47,30 +72,46 @@ export default defineComponent({
             </div>
         </div>
         <div class="container-panel-profile">
-            <div class="container-panel-profile__greeting">-</div>
-            <div class="container-panel-profile__inner">
-                <div class="container-panel-profile__idnumber">-</div>
-                <div class="container-panel-profile__buttons">
-                    <div class="container-panel-profile__button container-panel-profile__edit">
-                        <span class="material-icons">edit</span>
-                    </div>
-                    <div class="container-panel-profile__button container-panel-profile__delete">
-                        <span class="material-icons">delete</span>
-                    </div>
-                    <div
-                        style="display: none"
-                        class="container-panel-profile__button container-panel-profile__done"
-                    >
-                        <span class="material-icons">none</span>
+            <div
+                class="container-panel-profile-wrapper container-panel-profile-info"
+                :class="{ blur: !userStore.login.isLogged }"
+            >
+                <div class="container-panel-profile__greeting">-</div>
+                <div class="container-panel-profile__inner">
+                    <div class="container-panel-profile__idnumber">-</div>
+                    <div class="container-panel-profile__buttons">
+                        <div class="container-panel-profile__button container-panel-profile__edit">
+                            <span class="material-icons">edit</span>
+                        </div>
+                        <div
+                            class="container-panel-profile__button container-panel-profile__delete"
+                        >
+                            <span class="material-icons">delete</span>
+                        </div>
+                        <div
+                            style="display: none"
+                            class="container-panel-profile__button container-panel-profile__done"
+                        >
+                            <span class="material-icons">none</span>
+                        </div>
                     </div>
                 </div>
+                <div class="container-panel-profile__detail">-</div>
             </div>
-            <div class="container-panel-profile__detail">-</div>
+            <div
+                class="container-panel-profile-wrapper container-panel-profile-login"
+                v-if="!userStore.login.isLogged"
+            >
+                <div class="container-panel-profile-login__title">未登录</div>
+                <button @click="handleLoginCard('open')">登录</button>
+            </div>
         </div>
     </div>
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/styles/media_screen.scss' as screen;
+
 .page-container {
     .page-container-panel {
         display: flex;
@@ -87,6 +128,7 @@ export default defineComponent({
             margin-bottom: 10px;
             padding-top: 30px;
             border-top: 1px solid var(--border-color-base);
+            position: relative;
 
             .container-panel-profile__greeting {
                 font-size: 24px;
@@ -146,6 +188,40 @@ export default defineComponent({
                 color: var(--color-surface-4);
                 font-size: 12px;
                 padding: 0 2px;
+            }
+
+            .container-panel-profile-info {
+                &.blur {
+                    filter: blur(8px);
+                    user-select: none;
+                    pointer-events: none;
+                }
+            }
+
+            .container-panel-profile-login {
+                display: flex;
+                justify-content: flex-end;
+                flex-direction: column;
+                gap: 12px;
+                padding: 10px;
+                position: absolute;
+                inset: 0;
+
+                .container-panel-profile-login__title {
+                    font-size: 22px;
+                    font-weight: 600;
+                }
+
+                button {
+                    color: var(--color-surface-0);
+                    background: var(--color-primary);
+                    cursor: pointer;
+                    transition-duration: 250ms;
+
+                    &:hover {
+                        background: var(--color-base--subtle);
+                    }
+                }
             }
         }
 
@@ -239,40 +315,39 @@ export default defineComponent({
     }
 }
 
-@media screen and (max-width: 1000px) {
-    .page-container
-        .page-container-panel
-        .container-panel-profile
-        .container-panel-profile__buttons {
-        opacity: 1;
-    }
+@media screen and (max-width: screen.$media-screen-value-phone) {
+    .page-container {
+        .page-container-panel {
+            height: 75%;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            background: var(--background-color-overlay--lighter);
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 5;
+            opacity: 0;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            transition: var(--transition-hover);
+            transform: translate(calc(-100%), -16%);
+            overflow-x: auto;
 
-    .page-container .page-container-panel {
-        height: 75%;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        background: var(--background-color-overlay--lighter);
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 5;
-        opacity: 0;
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        transition: var(--transition-hover);
-        transform: translate(calc(-100%), -16%);
-        overflow-x: auto;
-    }
+            .container-panel-profile .container-panel-profile__buttons {
+                opacity: 1;
+            }
+        }
 
-    .page-container .show.page-container-panel {
-        height: 80vh;
-        max-height: 100%;
-        opacity: 1;
-        box-shadow:
-            2px 4px 10px rgba(0, 0, 0, 0.05),
-            0px 2px 5px rgba(0, 0, 0, 0.05);
-        transform: translate(calc(0% - 20px), -4%);
+        .show.page-container-panel {
+            height: 80vh;
+            max-height: 100%;
+            opacity: 1;
+            box-shadow:
+                2px 4px 10px rgba(0, 0, 0, 0.05),
+                0px 2px 5px rgba(0, 0, 0, 0.05);
+            transform: translate(calc(0% - 20px), -4%);
+        }
     }
 }
 </style>
