@@ -9,54 +9,14 @@ import PageViewContainer from './PageViewContainer.vue'
         <ContainerPanel />
         <div class="page-container-main">
             <div class="page-container-main-tools">
-                <router-link
-                    to="/"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >引导</router-link
-                >
-                <router-link
-                    to="/practice"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >刷题</router-link
-                >
-                <router-link
-                    to="/test"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >组卷</router-link
-                >
-                <router-link
-                    to="/view"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >看题</router-link
-                >
-                <router-link
-                    to="/star"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >收藏</router-link
-                >
-                <router-link
-                    to="/stat"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >统计</router-link
-                >
-                <router-link
-                    to="/advanced"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >设置</router-link
-                >
-                <router-link
-                    to="/about"
-                    class="page-container-main-tools__button"
-                    :exact-active-class="'active'"
-                    >关于</router-link
-                >
+                <router-link to="/" class="page-container-main-tools__button" :exact-active-class="'active'">引导</router-link>
+                <router-link to="/practice" class="page-container-main-tools__button" :exact-active-class="'active'">刷题</router-link>
+                <router-link to="/test" class="page-container-main-tools__button" :exact-active-class="'active'">组卷</router-link>
+                <router-link to="/view" class="page-container-main-tools__button" :exact-active-class="'active'">看题</router-link>
+                <router-link to="/star" class="page-container-main-tools__button" :exact-active-class="'active'">收藏</router-link>
+                <router-link to="/stat" class="page-container-main-tools__button" :exact-active-class="'active'">统计</router-link>
+                <router-link to="/advanced" class="page-container-main-tools__button" :exact-active-class="'active'">设置</router-link>
+                <router-link to="/about" class="page-container-main-tools__button" :exact-active-class="'active'">关于</router-link>
             </div>
             <div class="page-container-main-wrapper">
                 <RouterView />
@@ -144,7 +104,7 @@ import PageViewContainer from './PageViewContainer.vue'
     }
 }
 
-@media screen and (max-width: screen.$media-screen-value-phone) {
+@include screen.media-screen(phone) {
     .page-container {
         --container-height: 75vh;
         margin: 0 20px 3rem 20px;

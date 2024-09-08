@@ -13,4 +13,10 @@ $media-screen-value-pad: 1080px;
             @content;
         }
     }
+
+    @else if $device =='mobile' {
+        @media screen and (max-width: 1080px) {
+            @content;
+        }
+    }
 }

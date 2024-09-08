@@ -8,7 +8,6 @@ export default defineComponent({
     data() {
         return {
             showPanel: false,
-            totalCount: 0,
             profileInfo: {}
         }
     },
@@ -38,22 +37,22 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="page-container-panel" :class="{ show: showPanel }">
+    <div class="page-container-panel" :class="{ show: cardStore.mobileShowPanel }">
         <div class="container-panel-countdown">
             <div class="container-panel-header-countdown" id="total-countdown">
-                <div class="container-panel-header-countdown__value">{{ totalCount }}</div>
+                <div class="container-panel-header-countdown__value">-</div>
                 <div class="container-panel-header-countdown__label">题目总数</div>
             </div>
             <div class="container-panel-header-countdown" id="prof-countdown">
-                <div class="container-panel-header-countdown__value"></div>
+                <div class="container-panel-header-countdown__value">-</div>
                 <div class="container-panel-header-countdown__label">专业课题目数</div>
             </div>
             <div class="container-panel-header-countdown" id="general-countdown">
-                <div class="container-panel-header-countdown__value"></div>
+                <div class="container-panel-header-countdown__value">-</div>
                 <div class="container-panel-header-countdown__label">文化课题目数</div>
             </div>
             <div class="container-panel-header-countdown" id="exam-countdown">
-                <div class="container-panel-header-countdown__value"></div>
+                <div class="container-panel-header-countdown__value">-</div>
                 <div class="container-panel-header-countdown__label">距离转轨考还有（天）</div>
             </div>
         </div>
@@ -237,13 +236,13 @@ export default defineComponent({
 
                 .container-panel-header-countdown__value {
                     font-size: 42px;
-                    line-height: 1;
                 }
 
                 .container-panel-header-countdown__label {
                     color: var(--color-base--subtle);
                     font-size: 14px;
                     letter-spacing: 0.75px;
+                    line-height: 1;
                 }
             }
         }
@@ -315,7 +314,7 @@ export default defineComponent({
     }
 }
 
-@media screen and (max-width: screen.$media-screen-value-phone) {
+@include screen.media-screen(mobile) {
     .page-container {
         .page-container-panel {
             height: 75%;
@@ -326,10 +325,9 @@ export default defineComponent({
             top: 0;
             bottom: 0;
             left: 0;
-            z-index: 5;
+            z-index: 200;
             opacity: 0;
             backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
             transition: var(--transition-hover);
             transform: translate(calc(-100%), -16%);
             overflow-x: auto;
@@ -337,16 +335,16 @@ export default defineComponent({
             .container-panel-profile .container-panel-profile__buttons {
                 opacity: 1;
             }
-        }
 
-        .show.page-container-panel {
-            height: 80vh;
-            max-height: 100%;
-            opacity: 1;
-            box-shadow:
-                2px 4px 10px rgba(0, 0, 0, 0.05),
-                0px 2px 5px rgba(0, 0, 0, 0.05);
-            transform: translate(calc(0% - 20px), -4%);
+            &.show {
+                height: 80vh;
+                max-height: 100%;
+                opacity: 1;
+                box-shadow:
+                    2px 4px 10px rgba(0, 0, 0, 0.05),
+                    0px 2px 5px rgba(0, 0, 0, 0.05);
+                transform: translate(calc(0% - 20px), -4%);
+            }
         }
     }
 }

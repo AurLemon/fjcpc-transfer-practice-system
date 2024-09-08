@@ -1,7 +1,27 @@
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { useCardStore } from '@/stores/card'
+
+export default defineComponent({
+    name: 'PageHeader',
+    methods: {
+        showMobilePanel() {
+            this.cardStore.mobileShowPanel = !this.cardStore.mobileShowPanel
+        }
+    },
+    setup() {
+        const cardStore = useCardStore()
+        return {
+            cardStore
+        }
+    }
+})
+</script>
+
 <template>
     <nav class="page-menu">
         <div class="page-menu-wrapper">
-            <div class="page-menu-title">计大船政转轨考の刷题系统3.0</div>
+            <div class="page-menu-title" @click="showMobilePanel">计大船政转轨考の刷题系统3.0</div>
             <div class="page-menu-list">
                 <div class="page-menu-link">
                     <a href="https://wiki.hydcraft.cn/Player:%E6%9F%A0%E6%AA%AC" target="_blank">
@@ -29,6 +49,8 @@
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/styles/media_screen.scss' as screen;
+
 .page-menu {
     border-bottom: 1px solid var(--border-color-base);
     margin-bottom: calc(var(--gap-value) * 5);
@@ -71,7 +93,7 @@
     }
 }
 
-@media screen and (max-width: 1000px) {
+@include screen.media-screen(mobile) {
     .page-menu-wrapper {
         width: unset;
         padding: 10px 20px;
@@ -79,24 +101,24 @@
         flex-direction: column-reverse;
         flex-wrap: wrap;
         gap: calc(var(--gap-value) / 2);
-    }
 
-    .page-menu-wrapper .page-menu-title {
-        font-size: 22px;
-        padding: 2px 8px;
-        border-radius: 8px;
-        transition: var(--transition-hover);
-        user-select: none;
-        -webkit-user-select: none;
-    }
+        .page-menu-title {
+            font-size: 22px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            transition: var(--transition-hover);
+            user-select: none;
 
-    .page-menu-wrapper .page-menu-title:active {
-        transform: scale(0.98);
-        background: var(--border-color-base);
-    }
-
-    .page-menu-wrapper .page-menu-list {
-        margin: 0 8px;
+            &:active {
+                transform: scale(0.98);
+                background: var(--border-color-base);
+                transition-duration: 80ms;
+            }
+        }
+        
+        .page-menu-list {
+            margin: 0 8px;
+        }
     }
 }
 </style>

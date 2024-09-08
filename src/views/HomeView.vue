@@ -1,26 +1,6 @@
 <template>
     <div class="page-container-slide page-guide">
         <h2>哦哈哟同学🤓☝</h2>
-        <div class="page-guide-form">
-            <div class="page-guide-form-title">
-                保存身份证件信息（建议，可以不填，只有船政的系统里有你才能保存）
-            </div>
-            <div class="page-guide-form-sumbit">
-                <input type="text" id="id-card" placeholder="请输入身份证号" />
-                <button>
-                    <img src="../assets/images/icon_done.svg" alt="" />
-                    提交信息
-                </button>
-                <button>
-                    <img src="../assets/images/icon_delete.svg" alt="" />
-                    清除信息
-                </button>
-                <button>
-                    <img src="../assets/images/icon_refresh.svg" alt="" />
-                    重置信息
-                </button>
-            </div>
-        </div>
         <div class="page-guide-tips">
             😡😡😡 有bug赶快找<a href="https://qm.qq.com/q/kroi2TEapW">他(QQ 2115386831)</a
             >说，自信点就是我写的屎山网站的问题<br />网站会不定期更新CSS和JS，如果碰到问题先刷新页面，然后Ctrl+F5强制刷新缓存（手机:
@@ -120,7 +100,6 @@
 .page-container {
     .page-container-main {
         .page-guide {
-            --page-container-offset: calc(var(--page-container-show-index) * -100% + 0%);
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             grid-gap: var(--gap-value);

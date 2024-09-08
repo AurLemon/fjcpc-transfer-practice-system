@@ -24,14 +24,13 @@
                 </a>
             </div>
         </div>
-        <div class="page-footer-copyright">
-            This project based on Vue.js + Nest.js, coding and design by AurLemon. © 2024 AurLemon
-            under License MIT
-        </div>
+        <div class="page-footer-copyright">This project based on Vue.js + Nest.js, coding and design by AurLemon. © 2024 AurLemon under License MIT</div>
     </footer>
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/styles/media_screen.scss' as screen;
+
 .page-footer {
     color: var(--color-surface-4);
     font-size: 12px;
@@ -97,22 +96,22 @@
     }
 }
 
-@media screen and (max-width: 1000px) {
+@include screen.media-screen(mobile) {
     .page-footer {
         margin: 0 1rem 3rem 1rem;
-    }
 
-    .page-footer .page-footer-project {
-        padding-bottom: 0.75rem;
-    }
+        .page-footer-project {
+            padding-bottom: 0.75rem;
+        }
 
-    .page-footer .page-footer-project__name {
-        margin: 10px;
-    }
+        .page-footer-project__name {
+            margin: 10px;
+        }
 
-    .page-footer .page-footer-project__link {
-        flex-wrap: wrap;
-        gap: 0.75px;
+        .page-footer-project__link {
+            flex-wrap: wrap;
+            gap: 0.75px;
+        }
     }
 }
 </style>
