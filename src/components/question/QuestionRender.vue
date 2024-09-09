@@ -1,21 +1,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 
-//   unique_code: 题目唯一编号（随机生成的64位 绝对不会重复）【主键】
-//   pid: 题目编号 string
-//   content: 题目（最好大一点方便存数据）
-//   type: 题目类型（int即可，根据被爬取的考试中心的数据，已知的题目类型有0，1，2，8这几种）
-//   options: 题目选项（JSON）
-//   sub_options: 子题目选项（JSON，有些特殊题型会把选项当题目继续塞一层子题目，所以设置这个字段，只有dtlx为8这个才需要内容，一般直接为null即可）
-//   answer: 正确答案（数组，因为答案的选项）
-//   subject: 科目（int数字就行，到时候后端解析的时候会提供一个解析表，比如0代表未知，1代表语文，2代表数学，3代表英语，4代表思想政治，5代表专业基础-计算机应用技术）
-//   updated_time: 题目更新时间（把爬取下来的时间转成timestamp）
-//   crawl_time: 题目爬取下来的时间
-//   done_count: 做过这题的用户人数计数（默认0）
-//   incorrect_count: 做过这题而且做错过的用户人数计数（默认0）
-//   status: 题目状态，true是启用，false是未启用，新增的题目都是true
-//   crawl_count: 如果是新加的题目就默认1，如果下一次被爬取的时候，但是发现已经有这题了，那就给这个 count 加 1
-
 export default defineComponent({
     name: 'QuestionRender',
     data() {
