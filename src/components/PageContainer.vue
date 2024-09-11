@@ -17,6 +17,7 @@ import PageViewContainer from './PageViewContainer.vue'
                 <router-link to="/stat" class="page-container-main-tools__button" :exact-active-class="'active'">统计</router-link>
                 <router-link to="/advanced" class="page-container-main-tools__button" :exact-active-class="'active'">设置</router-link>
                 <router-link to="/about" class="page-container-main-tools__button" :exact-active-class="'active'">关于</router-link>
+                <router-link to="/debug" class="page-container-main-tools__button" :exact-active-class="'active'">调试</router-link>
             </div>
             <div class="page-container-main-wrapper">
                 <RouterView />

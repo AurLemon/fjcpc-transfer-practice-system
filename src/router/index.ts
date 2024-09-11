@@ -67,6 +67,11 @@ const router = createRouter({
                 title: '计大船政转轨考刷题系统 - 关于'
             },
             component: () => import('../views/AboutView.vue')
+        },
+        {
+            path: '/debug',
+            name: 'debug',
+            component: () => import('../views/DebugView.vue')
         }
     ]
 })
