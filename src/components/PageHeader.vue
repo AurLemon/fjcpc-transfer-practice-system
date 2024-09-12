@@ -52,21 +52,50 @@ export default defineComponent({
 @use '@/assets/styles/media_screen.scss' as screen;
 
 .page-menu {
+    width: 100%;
     border-bottom: 1px solid var(--border-color-base);
-    margin-bottom: calc(var(--gap-value) * 5);
 }
 
 .page-menu-wrapper {
     display: flex;
     justify-content: space-between;
+    width: 100%;
     align-items: center;
-    width: 1000px;
+    width: var(--page-common-width);
     margin: 0 auto;
     padding: 10px;
+
+    @include screen.media-screen(pad) {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    @include screen.media-screen(phone) {
+        width: unset;
+        align-items: flex-start;
+        flex-direction: column-reverse;
+        flex-wrap: wrap;
+        gap: calc(var(--gap-value) / 2);
+    }
 
     .page-menu-title {
         font-size: 20px;
         font-weight: bold;
+        padding: 2px 8px;
+        border-radius: 8px;
+        transition: var(--transition-hover);
+        user-select: none;
+
+        &:active {
+            transform: scale(0.98);
+            background: var(--border-color-base);
+            transition-duration: 80ms;
+        }
+
+        @include screen.media-screen(phone) {
+            font-size: 22px;
+        }
     }
 
     .page-menu-list {
@@ -96,26 +125,8 @@ export default defineComponent({
 @include screen.media-screen(mobile) {
     .page-menu-wrapper {
         width: unset;
-        padding: 10px 20px;
-        align-items: flex-start;
-        flex-direction: column-reverse;
-        flex-wrap: wrap;
-        gap: calc(var(--gap-value) / 2);
+        padding: 1rem 1.5rem;
 
-        .page-menu-title {
-            font-size: 22px;
-            padding: 2px 8px;
-            border-radius: 8px;
-            transition: var(--transition-hover);
-            user-select: none;
-
-            &:active {
-                transform: scale(0.98);
-                background: var(--border-color-base);
-                transition-duration: 80ms;
-            }
-        }
-        
         .page-menu-list {
             margin: 0 8px;
         }

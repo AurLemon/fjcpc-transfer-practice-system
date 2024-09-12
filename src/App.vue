@@ -9,3 +9,13 @@ import PageFooter from './components/PageFooter.vue'
     <PageContainer />
     <PageFooter />
 </template>
+
+<style lang="scss">
+#app {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
+    min-height: 100vh;
+}
+</style>

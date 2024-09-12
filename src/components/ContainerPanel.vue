@@ -16,6 +16,7 @@ export default defineComponent({
             switch (state) {
                 case 'open':
                     this.cardStore.showLoginCard = true
+                    this.cardStore.mobileShowPanel = false
                     break
                 case 'close':
                     this.cardStore.showLoginCard = false
@@ -57,24 +58,16 @@ export default defineComponent({
             </div>
         </div>
         <div class="container-panel-status">
-            <div class="container-panel-status__label" id="progress-sync-status">
-                <span class="container-panel-status__color"></span
-                ><span class="container-panel-status__text">-</span>
-            </div>
+            <div class="container-panel-status__label" id="progress-sync-status"><span class="container-panel-status__color"></span><span class="container-panel-status__text">-</span></div>
             <div class="container-panel-status__progress" id="backend-status">
-                <div class="container-panel-status__progressLabel">
-                    做题进度<span id="student-progress">-</span>
-                </div>
+                <div class="container-panel-status__progressLabel">做题进度<span id="student-progress">-</span></div>
                 <div class="container-panel-status__progressWrapper">
                     <div class="container-panel-status__progressScroll"></div>
                 </div>
             </div>
         </div>
         <div class="container-panel-profile">
-            <div
-                class="container-panel-profile-wrapper container-panel-profile-info"
-                :class="{ blur: !userStore.login.isLogged }"
-            >
+            <div class="container-panel-profile-wrapper container-panel-profile-info" :class="{ blur: !userStore.login.isLogged }">
                 <div class="container-panel-profile__greeting">-</div>
                 <div class="container-panel-profile__inner">
                     <div class="container-panel-profile__idnumber">-</div>
@@ -82,25 +75,17 @@ export default defineComponent({
                         <div class="container-panel-profile__button container-panel-profile__edit">
                             <span class="material-icons">edit</span>
                         </div>
-                        <div
-                            class="container-panel-profile__button container-panel-profile__delete"
-                        >
+                        <div class="container-panel-profile__button container-panel-profile__delete">
                             <span class="material-icons">delete</span>
                         </div>
-                        <div
-                            style="display: none"
-                            class="container-panel-profile__button container-panel-profile__done"
-                        >
+                        <div style="display: none" class="container-panel-profile__button container-panel-profile__done">
                             <span class="material-icons">none</span>
                         </div>
                     </div>
                 </div>
                 <div class="container-panel-profile__detail">-</div>
             </div>
-            <div
-                class="container-panel-profile-wrapper container-panel-profile-login"
-                v-if="!userStore.login.isLogged"
-            >
+            <div class="container-panel-profile-wrapper container-panel-profile-login" v-if="!userStore.login.isLogged">
                 <div class="container-panel-profile-login__title">未登录</div>
                 <button @click="handleLoginCard('open')">登录</button>
             </div>
@@ -115,6 +100,8 @@ export default defineComponent({
     .page-container-panel {
         display: flex;
         flex-direction: column;
+        flex: 0;
+        width: var(--panel-width);
         min-width: 280px;
         padding: 15px;
         border: 1px solid var(--border-color-base);
@@ -320,7 +307,7 @@ export default defineComponent({
             height: 75%;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
-            background: var(--background-color-overlay--lighter);
+            background: var(--background-color-overlay);
             position: absolute;
             top: 0;
             bottom: 0;
@@ -343,7 +330,7 @@ export default defineComponent({
                 box-shadow:
                     2px 4px 10px rgba(0, 0, 0, 0.05),
                     0px 2px 5px rgba(0, 0, 0, 0.05);
-                transform: translate(calc(0% - 20px), -4%);
+                transform: translate(calc(0% - 5px), -4%);
             }
         }
     }

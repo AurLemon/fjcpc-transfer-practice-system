@@ -1,20 +1,13 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import { encryptWithSM2 } from '../utils/crypto'
+<script lang="ts">
+import { defineComponent } from 'vue'
 
-const value = ref<string[]>([])
-
-const encryptData = (data: string[], key: string) => {
-    return data.map((item) => encryptWithSM2(item, key))
-}
-
-value.value = encryptData(dataToEncrypt, publicKey)
+export default defineComponent({
+    name: 'DebugView'
+})
 </script>
 
 <template>
-    <div class="page-debug">
-        {{ value }}
-    </div>
+    <div class="page-debug"></div>
 </template>
 
 <style>

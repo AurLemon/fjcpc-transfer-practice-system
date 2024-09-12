@@ -4,19 +4,15 @@
             <div class="page-footer-project__link">
                 <a href="https://beian.miit.gov.cn/" target="_blank">
                     <img src="../assets/images/beian_miit.png" width="16" height="16" />
-                    闽ICP备2023007345号-1
-                </a>
-                <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank">
-                    <img src="../assets/images/beian_mps.png" width="16" height="16" />
-                    闽公网安备35010202001677号
-                </a>
-                <a href="https://lemon.hydcraft.cn/stat" target="_blank">
-                    <img src="../assets/images/favicon.png" width="16" height="16" />
-                    用户做题统计
+                    闽ICP备2023007345号-3
                 </a>
                 <a href="https://appzb.fjcpc.edu.cn/kszx-test32/#/login" target="_blank">
                     <img src="../assets/images/logo_fjcpc.png" width="16" height="16" />
-                    船政刷题登录
+                    船政转轨考练习中心
+                </a>
+                <a href="https://appzb.fjcpc.edu.cn/kszx-test32-app/#/login" target="_blank">
+                    <img src="../assets/images/logo_fjcpc.png" width="16" height="16" />
+                    船政转轨考练习中心（移动端）
                 </a>
             </div>
         </div>
@@ -32,7 +28,7 @@
     font-size: 12px;
     max-width: var(--page-common-width);
     margin: 0 auto;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 
     .page-footer-copyright {
         text-align: center;
@@ -41,6 +37,7 @@
     .page-footer-project {
         display: flex;
         justify-content: center;
+        width: 950px;
         padding-bottom: 0.25rem;
         margin-bottom: 0.25rem;
         border-bottom: 1px solid var(--border-color-base);
@@ -82,7 +79,8 @@
         margin: 0 1rem 3rem 1rem;
 
         .page-footer-project {
-            padding-bottom: 0.75rem;
+            width: 100%;
+            padding-bottom: 0.5rem;
         }
 
         .page-footer-project__name {
@@ -90,6 +88,7 @@
         }
 
         .page-footer-project__link {
+            justify-content: center;
             flex-wrap: wrap;
             gap: 0.75px;
         }

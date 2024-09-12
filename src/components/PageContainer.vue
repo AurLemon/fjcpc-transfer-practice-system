@@ -11,7 +11,7 @@ import PageViewContainer from './PageViewContainer.vue'
             <div class="page-container-main-tools">
                 <router-link to="/" class="page-container-main-tools__button" :exact-active-class="'active'">引导</router-link>
                 <router-link to="/practice" class="page-container-main-tools__button" :exact-active-class="'active'">刷题</router-link>
-                <router-link to="/test" class="page-container-main-tools__button" :exact-active-class="'active'">组卷</router-link>
+                <router-link to="/test" class="page-container-main-tools__button" :exact-active-class="'active'">试卷</router-link>
                 <router-link to="/view" class="page-container-main-tools__button" :exact-active-class="'active'">看题</router-link>
                 <router-link to="/star" class="page-container-main-tools__button" :exact-active-class="'active'">收藏</router-link>
                 <router-link to="/stat" class="page-container-main-tools__button" :exact-active-class="'active'">统计</router-link>
@@ -34,18 +34,27 @@ import PageViewContainer from './PageViewContainer.vue'
     --container-height: 75vh;
     --panel-width: 300px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     gap: calc(var(--gap-value) * 2);
-    max-width: var(--page-common-width);
-    min-height: 600px;
+    min-height: 400px;
     height: var(--container-height);
-    margin: 0 auto;
-    margin-bottom: 4rem;
+    padding-top: 1.25rem;
+    margin: auto 8rem;
     position: relative;
+
+    @include screen.media-screen(pad) {
+        padding-top: 1.25rem !important;
+    }
+
+    @include screen.media-screen(phone) {
+        --container-height: 80vh;
+        padding-top: 0;
+    }
 
     .page-container-main {
         display: flex;
-        width: calc(100% - var(--panel-width));
+        flex: 1;
+        width: 60vw;
         border: 1px solid var(--border-color-base);
         border-radius: 10px;
         background: var(--color-surface-0);
@@ -65,6 +74,7 @@ import PageViewContainer from './PageViewContainer.vue'
                 padding: 2px 4px;
                 border-radius: 12px;
                 text-decoration: none;
+                white-space: nowrap;
                 transition: var(--transition-hover);
                 user-select: none;
 
@@ -105,16 +115,20 @@ import PageViewContainer from './PageViewContainer.vue'
     }
 }
 
-@include screen.media-screen(phone) {
+@include screen.media-screen(mobile) {
     .page-container {
-        --container-height: 75vh;
-        margin: 0 20px 3rem 20px;
+        width: 100%;
+        padding: 0 1.25rem;
+        margin: 3rem 0;
 
         .page-container-main {
             width: 100%;
 
             .page-container-main-tools {
-                bottom: calc(100% + 6px);
+                width: 100%;
+                bottom: calc(100% + 4px);
+                padding-bottom: 5px;
+                overflow-x: auto;
             }
         }
     }

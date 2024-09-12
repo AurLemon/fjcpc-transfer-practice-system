@@ -3,8 +3,8 @@ import { defineComponent } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/card'
 
-import { sm2 } from 'sm-crypto-v2'
-import { get, post } from '@/api/api'
+import { get, post, getPublicKey } from '@/api/api'
+import { sm2Encrypt } from '@/utils/crypto'
 
 interface Data {
     id_number: string
@@ -25,11 +25,10 @@ export default defineComponent({
 
             try {
                 const keyResponse = await get<{ data: Object; public_key: string }>('/auth/login')
-                const cipherMode = 1
                 const publicKey = keyResponse.data.public_key
 
-                const encryptedIdNumber = sm2.doEncrypt(this.id_number, publicKey, cipherMode)
-                const encryptedPassword = sm2.doEncrypt(this.password, publicKey, cipherMode)
+                const encryptedIdNumber = sm2Encrypt(this.id_number, publicKey)
+                const encryptedPassword = sm2Encrypt(this.password, publicKey)
 
                 try {
                     const tokenResponse = await post<{
@@ -89,7 +88,7 @@ export default defineComponent({
                 <li>未注册的会自动注册，登录码需要纯六位数字。</li>
                 <li>不登录也可以做题，只不过做题数据会保留在本地，换浏览器就会丢失。</li>
                 <li>必须船政转轨考联系中心的系统里有你的身份证信息，才能在本站进行登录。为了安全考虑，不然随便来一个身份证就把数据库填满了。</li>
-                <li>身份证信息在前后端的存储都是密文的。前后端交互过程采用非对称加密算法 SM2 加密，后端数据库采用 AES 加密算法。可以查阅本项目的代码仓库进行安全审查。</li>
+                <li>身份证信息在前后端的存储都是密文的。前后端交互过程采用非对称加密算法 SM2 加密，后端数据库采用 SHA256 算法加密，具体可以查阅本项目的代码仓库进行安全审查。</li>
             </ul>
         </div>
         <div class="view-login-close" @click="closeLoginCard">
