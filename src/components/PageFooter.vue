@@ -1,10 +1,6 @@
 <template>
     <footer class="page-footer">
         <div class="page-footer-project">
-            <div class="page-footer-project__name">
-                <span>AurLemon's Personal Practice Question Bank</span>
-                <span>for FJCPC Transfer Exam</span>
-            </div>
             <div class="page-footer-project__link">
                 <a href="https://beian.miit.gov.cn/" target="_blank">
                     <img src="../assets/images/beian_miit.png" width="16" height="16" />
@@ -44,29 +40,14 @@
 
     .page-footer-project {
         display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
+        justify-content: center;
         padding-bottom: 0.25rem;
         margin-bottom: 0.25rem;
         border-bottom: 1px solid var(--border-color-base);
     }
 
-    .page-footer-project__name {
-        display: flex;
-        flex-direction: column;
-        color: var(--color-base);
-        font-size: 16px;
-        font-family: 'JetBrains Mono';
-
-        span:last-child {
-            color: var(--color-surface-4);
-            font-size: 14px;
-        }
-    }
-
     .page-footer-project__link {
         display: flex;
-        align-items: flex-end;
         gap: calc(var(--gap-value) / 6);
 
         a {
