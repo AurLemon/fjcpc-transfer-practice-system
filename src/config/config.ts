@@ -10,5 +10,6 @@ export default () => ({
     password: process.env.DB_PASSWORD || '',
     name: process.env.DB_NAME || 'test',
     sqlitePath: process.env.SQLITE_PATH || './database/sqlite.db',
+    requestTimesPerRound: process.env.REQ_TIMES_ROUND || '60',
   },
 });

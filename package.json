@@ -33,13 +33,14 @@
         "bcryptjs": "^2.4.3",
         "crypto": "^1.0.1",
         "dotenv": "^16.4.5",
+        "jsonwebtoken": "^9.0.2",
         "mysql": "^2.18.1",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
         "passport-local": "^1.0.0",
         "reflect-metadata": "^0.2.0",
         "rxjs": "^7.8.1",
-        "sm-crypto": "^0.3.13",
+        "sm-crypto-v2": "^1.9.2",
         "typeorm": "^0.3.20"
     },
     "devDependencies": {

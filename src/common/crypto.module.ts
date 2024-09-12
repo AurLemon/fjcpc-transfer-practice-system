@@ -1,3 +1,5 @@
+// src/common/crypto.module
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CryptoUtil } from './crypto.util';

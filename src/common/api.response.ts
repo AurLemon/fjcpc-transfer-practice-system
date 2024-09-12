@@ -1,22 +1,29 @@
+// src/common/api.response
+
+import { HttpException } from '@nestjs/common';
+
 export class ApiResponseUtil {
-  // 成功响应
-  static success(status: number, data: any) {
+  static success(code: number, data: any) {
     return {
-      status,
+      code,
+      status: 'success',
       data,
       timestamp: Date.now(),
     };
   }
 
-  // 错误响应
-  static error(status: number, type: string, message: string) {
-    return {
-      status,
-      data: {
-        type,
-        message,
+  static error(code: number, type: string, message: string) {
+    throw new HttpException(
+      {
+        code,
+        status: 'error',
+        data: {
+          type,
+          message,
+        },
+        timestamp: Date.now(),
       },
-      timestamp: Date.now(),
-    };
+      code,
+    );
   }
 }
