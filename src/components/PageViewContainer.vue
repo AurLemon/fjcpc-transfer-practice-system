@@ -19,7 +19,9 @@ export default defineComponent({
 
 <template>
     <div class="page-view-container" :class="{ active: cardStore.showLoginCard }">
-        <LoginCard v-if="cardStore.showLoginCard" />
+        <Transition name="login">
+            <LoginCard v-if="cardStore.showLoginCard" />
+        </Transition>
     </div>
 </template>
 
@@ -42,5 +44,16 @@ $page-value-z-index: 100;
         backdrop-filter: blur(48px) saturate(0.5);
         transition: 250ms ease;
     }
+}
+
+.login-enter-active,
+.login-leave-active {
+    transition: all 350ms ease;
+}
+
+.login-enter-from,
+.login-leave-to {
+    opacity: 0;
+    transform: scale(0.9);
 }
 </style>

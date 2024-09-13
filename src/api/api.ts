@@ -1,7 +1,7 @@
 // src/api/api.ts
 
 import axios from 'axios'
-import type { AxiosResponse } from 'axios' // 使用类型-only 导入
+import type { AxiosResponse } from 'axios'
 
 // 定义请求参数的类型
 interface Params {
@@ -15,7 +15,7 @@ interface Data {
 
 // 创建 Axios 实例
 const apiClient = axios.create({
-    baseURL: import.meta.env.VUE_APP_BASE_API,
+    baseURL: import.meta.env.VITE_BASE_API,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -65,24 +65,25 @@ export const del = <T>(url: string, params?: Params): ApiResponse<T> => {
 }
 
 /**
- * 异步获取公钥，并通过回调函数返回公钥。
- * 
- * @param {Function} callback - 一个回调函数，接收公钥作为参数。
- * @throws {Error} 如果请求失败，则抛出错误。
- * 
+ * 异步获取公钥。如果获取失败，将返回 null。
+ *
+ * @returns {Promise<string | null>} 返回公钥的 Promise。如果请求成功，返回公钥字符串；如果失败，返回 null。
+ *
  * @example
- * getPublicKey((publicKey) => {
+ * const publicKey = await getPublicKey();
+ * if (publicKey !== null) {
  *     console.log('Received public key:', publicKey);
- * }).catch(error => {
- *     console.error('Error:', error);
- * });
+ *     // 后续操作
+ * } else {
+ *     console.error('Failed to fetch public key');
+ * }
  */
-export const getPublicKey = async (callback: (publicKey: string) => void) => {
+export const getPublicKey = async (): Promise<string | null> => {
     try {
-        const keyResponse = await get<{ data: Object; public_key: string }>('/auth/login')
-        const publicKey = keyResponse.data.public_key
-        callback(publicKey)
+        const keyResponse: any = await get('/auth/login')
+        const publicKey = keyResponse.data.data.public_key
+        return publicKey
     } catch (err) {
-        throw new Error((err as Error).message)
+        return null
     }
 }

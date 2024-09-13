@@ -38,23 +38,18 @@ import PageViewContainer from './PageViewContainer.vue'
     gap: calc(var(--gap-value) * 2);
     min-height: 400px;
     height: var(--container-height);
-    padding-top: 1.25rem;
     margin: auto 8rem;
     position: relative;
 
-    @include screen.media-screen(pad) {
-        padding-top: 1.25rem !important;
-    }
-
     @include screen.media-screen(phone) {
         --container-height: 80vh;
-        padding-top: 0;
     }
 
     .page-container-main {
         display: flex;
         flex: 1;
         width: 60vw;
+        max-width: 900px;
         border: 1px solid var(--border-color-base);
         border-radius: 10px;
         background: var(--color-surface-0);

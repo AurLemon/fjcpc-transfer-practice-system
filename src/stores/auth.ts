@@ -20,6 +20,12 @@ export const useAuthStore = defineStore('auth', {
         },
         readRefreshToken() {
             return localStorage.getItem('refresh_token')
+        },
+        deleteToken() {
+            localStorage.removeItem('token')
+        },
+        deleteRefreshToken() {
+            localStorage.removeItem('refresh_token')
         }
     }
 })

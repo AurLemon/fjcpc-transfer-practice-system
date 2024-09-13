@@ -6,11 +6,15 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import VueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
-    plugins: [
-        vue(),
-        vueJsx(),
-        VueDevTools(),
-    ],
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3000',
+                changeOrigin: true
+            }
+        }
+    },
+    plugins: [vue(), vueJsx(), VueDevTools()],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))

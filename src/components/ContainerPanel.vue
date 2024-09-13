@@ -1,7 +1,10 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
+import dayjs from 'dayjs'
+
 import { useCardStore } from '@/stores/card'
 import { useUserStore } from '@/stores/user'
+import { useNotifyStore } from '@/stores/notify'
 
 export default defineComponent({
     name: 'ContainerPanel',
@@ -24,14 +27,26 @@ export default defineComponent({
                 default:
                     break
             }
+        },
+        openLoginCard() {
+            this.cardStore.showLoginCard = true
+        },
+        userLogout() {
+            this.notifyStore.addMessage('success', '即将登出')
+            setTimeout(() => {
+                this.userStore.userLogout()
+                this.notifyStore.addMessage('success', `已登出（${dayjs().format('YYYY-MM-DD HH:mm:ss')}）`)
+            }, 1500)
         }
     },
     setup() {
         const cardStore = useCardStore()
         const userStore = useUserStore()
+        const notifyStore = useNotifyStore()
         return {
             cardStore,
-            userStore
+            userStore,
+            notifyStore
         }
     }
 })
@@ -72,14 +87,11 @@ export default defineComponent({
                 <div class="container-panel-profile__inner">
                     <div class="container-panel-profile__idnumber">-</div>
                     <div class="container-panel-profile__buttons">
-                        <div class="container-panel-profile__button container-panel-profile__edit">
+                        <div class="container-panel-profile__button container-panel-profile__edit" @click="openLoginCard">
                             <span class="material-icons">edit</span>
                         </div>
-                        <div class="container-panel-profile__button container-panel-profile__delete">
-                            <span class="material-icons">delete</span>
-                        </div>
-                        <div style="display: none" class="container-panel-profile__button container-panel-profile__done">
-                            <span class="material-icons">none</span>
+                        <div class="container-panel-profile__button container-panel-profile__logout" @click="userLogout">
+                            <span class="material-icons">logout</span>
                         </div>
                     </div>
                 </div>
@@ -87,7 +99,10 @@ export default defineComponent({
             </div>
             <div class="container-panel-profile-wrapper container-panel-profile-login" v-if="!userStore.login.isLogged">
                 <div class="container-panel-profile-login__title">未登录</div>
-                <button @click="handleLoginCard('open')">登录</button>
+                <button @click="handleLoginCard('open')" :class="{ disabled: cardStore.showLoginCard }">
+                    <div class="info" v-if="!cardStore.showLoginCard">打开登录面板</div>
+                    <div class="info" v-else>请在登录面板内操作</div>
+                </button>
             </div>
         </div>
     </div>
@@ -206,6 +221,12 @@ export default defineComponent({
 
                     &:hover {
                         background: var(--color-base--subtle);
+                    }
+
+                    &.disabled {
+                        color: var(--color-base--subtle);
+                        background: var(--background-color-primary--hover);
+                        cursor: not-allowed;
                     }
                 }
             }

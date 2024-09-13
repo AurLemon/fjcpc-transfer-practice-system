@@ -4,53 +4,7 @@ import { defineComponent } from 'vue'
 export default defineComponent({
     name: 'QuestionRender',
     data() {
-        return {
-            response: {
-                code: 200,
-                status: 'success',
-                data: {
-                    questions: [
-                        {
-                            pid: 114514,
-                            content: '<img src=https://app.fjcpc.edu.cn/fjcpc/2022/04/01/e385cc7db17e480099bd4b7985503308.jpeg />',
-                            type: 0,
-                            options: [
-                                {
-                                    id: 1,
-                                    number: 'A',
-                                    content: ' 虽则听死了的老头子说，好像那老祖父逃出长毛营盘的时候，不巧撞着了一个巡路的小长毛……'
-                                },
-                                {
-                                    id: 2,
-                                    number: 'B',
-                                    content: ' 虽则听死了的老头子说，好像那老祖父逃出长毛营盘的时候，不巧撞着了一个巡路的小长毛……'
-                                },
-                                {
-                                    id: 3,
-                                    number: 'C',
-                                    content: ' 虽则听死了的老头子说，好像那老祖父逃出长毛营盘的时候，不巧撞着了一个巡路的小长毛……'
-                                },
-                                {
-                                    id: 4,
-                                    number: 'D',
-                                    content: ' 虽则听死了的老头子说，好像那老祖父逃出长毛营盘的时候，不巧撞着了一个巡路的小长毛……'
-                                }
-                            ],
-                            answer: 2
-                        },
-                        {
-
-                        }
-                    ],
-                    question_info: {
-                        subject: 'math',
-                        order: 'desc',
-
-                    }
-                },
-                timestamp: 19198100
-            }
-        }
+        return {}
     }
 })
 </script>

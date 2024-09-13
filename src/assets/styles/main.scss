@@ -70,12 +70,6 @@ button:active {
     transform: scale(0.95);
 }
 
-.disabled {
-    filter: grayscale(1);
-    pointer-events: none;
-    user-select: none;
-}
-
 @media screen and (max-width: 1000px) {
     :root {
         --width-layout: unset;
