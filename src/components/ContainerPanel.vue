@@ -36,7 +36,7 @@ export default defineComponent({
             setTimeout(() => {
                 this.userStore.userLogout()
                 this.notifyStore.addMessage('success', `已登出（${dayjs().format('YYYY-MM-DD HH:mm:ss')}）`)
-            }, 1500)
+            }, 1000)
         }
     },
     setup() {
@@ -83,9 +83,13 @@ export default defineComponent({
         </div>
         <div class="container-panel-profile">
             <div class="container-panel-profile-wrapper container-panel-profile-info" :class="{ blur: !userStore.login.isLogged }">
-                <div class="container-panel-profile__greeting">-</div>
+                <div class="container-panel-profile__greeting">
+                    {{ userStore.login.isLogged && userStore.profile.name.length > 0 ? `${userStore.profile.name[0]}同学，你好。` : '-' }}
+                </div>
                 <div class="container-panel-profile__inner">
-                    <div class="container-panel-profile__idnumber">-</div>
+                    <div class="container-panel-profile__idnumber">
+                        {{ userStore.login.isLogged && userStore.profile.id_number.length > 0 ? userStore.profile.id_number : '-' }}
+                    </div>
                     <div class="container-panel-profile__buttons">
                         <div class="container-panel-profile__button container-panel-profile__edit" @click="openLoginCard">
                             <span class="material-icons">edit</span>
@@ -95,7 +99,9 @@ export default defineComponent({
                         </div>
                     </div>
                 </div>
-                <div class="container-panel-profile__detail">-</div>
+                <div class="container-panel-profile__detail">
+                    {{ userStore.login.isLogged && userStore.profile.profession.length > 0 && userStore.profile.school.length > 0 ? `${userStore.profile.profession}（${userStore.profile.school}）` : '-' }}
+                </div>
             </div>
             <div class="container-panel-profile-wrapper container-panel-profile-login" v-if="!userStore.login.isLogged">
                 <div class="container-panel-profile-login__title">未登录</div>

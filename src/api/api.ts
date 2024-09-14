@@ -13,6 +13,12 @@ interface Data {
     [key: string]: any
 }
 
+// 定义 Axios 配置类型
+interface AxiosConfig {
+    headers?: { [key: string]: string }
+    params?: Params
+}
+
 // 创建 Axios 实例
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_BASE_API,
@@ -28,40 +34,44 @@ type ApiResponse<T> = Promise<AxiosResponse<T>>
  * 发送 GET 请求
  * @param url - 请求的 URL
  * @param params - 查询参数
+ * @param config - 可选的自定义配置
  * @returns 服务器响应的 Promise 对象
  */
-export const get = <T>(url: string, params?: Params): ApiResponse<T> => {
-    return apiClient.get<T>(url, { params })
+export const get = <T>(url: string, params?: Params, config?: AxiosConfig): ApiResponse<T> => {
+    return apiClient.get<T>(url, { params, ...config })
 }
 
 /**
  * 发送 POST 请求
  * @param url - 请求的 URL
  * @param data - 请求体数据
+ * @param config - 可选的自定义配置
  * @returns 服务器响应的 Promise 对象
  */
-export const post = <T>(url: string, data: Data): ApiResponse<T> => {
-    return apiClient.post<T>(url, data)
+export const post = <T>(url: string, data: Data, config?: AxiosConfig): ApiResponse<T> => {
+    return apiClient.post<T>(url, data, config)
 }
 
 /**
  * 发送 PUT 请求
  * @param url - 请求的 URL
  * @param data - 请求体数据
+ * @param config - 可选的自定义配置
  * @returns 服务器响应的 Promise 对象
  */
-export const put = <T>(url: string, data: Data): ApiResponse<T> => {
-    return apiClient.put<T>(url, data)
+export const put = <T>(url: string, data: Data, config?: AxiosConfig): ApiResponse<T> => {
+    return apiClient.put<T>(url, data, config)
 }
 
 /**
  * 发送 DELETE 请求
  * @param url - 请求的 URL
  * @param params - 查询参数
+ * @param config - 可选的自定义配置
  * @returns 服务器响应的 Promise 对象
  */
-export const del = <T>(url: string, params?: Params): ApiResponse<T> => {
-    return apiClient.delete<T>(url, { params })
+export const del = <T>(url: string, params?: Params, config?: AxiosConfig): ApiResponse<T> => {
+    return apiClient.delete<T>(url, { params, ...config })
 }
 
 /**

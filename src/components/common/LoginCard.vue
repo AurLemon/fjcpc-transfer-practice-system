@@ -95,9 +95,10 @@ export default defineComponent({
                     this.loadingInfo = tokenResponse.data.data.type === 'login' ? '登录成功' : '已自动注册，别把密码忘了宝宝'
                     this.userStore.login.isLogged = true
                     this.notifyStore.addMessage('success', '登录成功！')
+                    authStore.getUserProfile()
                     setTimeout(() => {
                         this.closeLoginCard()
-                    }, 2000)
+                    }, 1200)
                 } catch (err) {
                     this.loadStatus = 'error'
                     this.loadingInfo = `请求失败（${err}）`
@@ -111,6 +112,9 @@ export default defineComponent({
         closeLoginCard() {
             this.cardStore.showLoginCard = false
         },
+        keyupFetchData: debounce(function () {
+            this.fetchData()
+        }, 300),
         resetLoadStatus: debounce(function () {
             setTimeout(() => {
                 ;(this.loadStatus = 'none'), (this.loadingInfo = '')
@@ -146,11 +150,11 @@ export default defineComponent({
             <div class="view-login-form">
                 <div class="view-login-form__input" :class="{ disabled: loadStatus === 'loading' }">
                     <label>身份证</label>
-                    <input type="text" placeholder="请输入身份证号" v-model="id_number" maxlength="18" @keyup.enter="fetchData" />
+                    <input type="text" placeholder="请输入身份证号" v-model="id_number" maxlength="18" @keyup.enter="keyupFetchData" />
                 </div>
                 <div class="view-login-form__input" :class="{ disabled: loadStatus === 'loading' }">
                     <label>登录码</label>
-                    <input type="password" placeholder="请输入6位数字的登录码" v-model="password" maxlength="6" @keyup.enter="fetchData" />
+                    <input type="password" placeholder="请输入6位数字的登录码" v-model="password" maxlength="6" @keyup.enter="keyupFetchData" />
                 </div>
                 <div class="view-login-form__login">
                     <button @click="fetchData" :class="{ disabled: loadStatus === 'loading' }">

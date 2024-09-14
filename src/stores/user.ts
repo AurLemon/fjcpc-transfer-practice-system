@@ -6,6 +6,14 @@ export const useUserStore = defineStore('user', {
     state: () => ({
         login: {
             isLogged: false
+        },
+        profile: {
+            name: '',
+            id_number: '',
+            school: '',
+            profession: '',
+            last_login: '',
+            reg_date: ''
         }
     }),
     actions: {
@@ -25,6 +33,17 @@ export const useUserStore = defineStore('user', {
             this.login.isLogged = false
             authStore.deleteToken()
             authStore.deleteRefreshToken()
+            this.resetProfile()
+        },
+        resetProfile() {
+            this.profile = {
+                name: '',
+                id_number: '',
+                school: '',
+                profession: '',
+                last_login: '',
+                reg_date: ''
+            }
         }
     }
 })

@@ -6,12 +6,16 @@ import NotifyContainer from './components/common/NotifyContainer.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
+import { useNotifyStore } from '@/stores/notify'
+
+import { get, post } from './api/api'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
+const notifyStore = useNotifyStore()
 
 if (userStore.readLogin()) {
-    userStore.login.isLogged = true
+    authStore.getUserProfile();
 }
 </script>
 
