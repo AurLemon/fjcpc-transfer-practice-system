@@ -41,14 +41,20 @@ export default defineComponent({
             }, 1000)
         },
         getCulturalCount(): number {
-            return this.questionStore.questionInfo.cultural_lesson.reduce((sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
-                return sum + lesson.count
-            }, 0)
+            return this.questionStore.questionInfo.cultural_lesson.reduce(
+                (sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
+                    return sum + lesson.count
+                },
+                0
+            )
         },
         getProfessionCount(): number {
-            return this.questionStore.questionInfo.profession_lesson.reduce((sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
-                return sum + lesson.count
-            }, 0)
+            return this.questionStore.questionInfo.profession_lesson.reduce(
+                (sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
+                    return sum + lesson.count
+                },
+                0
+            )
         },
         examCountdown(): number {
             const examDate = '2025-05-15'
@@ -84,16 +90,22 @@ export default defineComponent({
                 <div class="container-panel-header-countdown__label">文化课题目数</div>
             </div>
             <div class="container-panel-header-countdown">
-                <div class="container-panel-header-countdown__value">{{ questionStore.isGetQuestionInfo ? '-' : getCulturalCount() + getProfessionCount() }}</div>
+                <div class="container-panel-header-countdown__value">
+                    {{ questionStore.isGetQuestionInfo ? '-' : getCulturalCount() + getProfessionCount() }}
+                </div>
                 <div class="container-panel-header-countdown__label">题目总数</div>
             </div>
             <div class="container-panel-header-countdown">
-                <div class="container-panel-header-countdown__value">{{ examCountdown() }}</div>
+                <div class="container-panel-header-countdown__value">
+                    {{ examCountdown() }}
+                </div>
                 <div class="container-panel-header-countdown__label">离转轨考还有几天</div>
             </div>
         </div>
         <div class="container-panel-status">
-            <div class="container-panel-status__label" id="progress-sync-status"><span class="container-panel-status__color"></span><span class="container-panel-status__text">-</span></div>
+            <div class="container-panel-status__label" id="progress-sync-status">
+                <span class="container-panel-status__color"></span><span class="container-panel-status__text">-</span>
+            </div>
             <div class="container-panel-status__progress" id="backend-status">
                 <div class="container-panel-status__progressLabel">做题进度<span id="student-progress">-</span></div>
                 <div class="container-panel-status__progressWrapper">
@@ -111,16 +123,20 @@ export default defineComponent({
                         {{ userStore.login.isLogged && userStore.profile.id_number.length > 0 ? userStore.profile.id_number : '-' }}
                     </div>
                     <div class="container-panel-profile__buttons">
-                        <div class="container-panel-profile__button container-panel-profile__edit" @click="openLoginCard">
+                        <div class="container-panel-profile__button container-panel-profile__edit" @click="openLoginCard" v-tippy="{ content: '切换账户' }">
                             <span class="material-icons">edit</span>
                         </div>
-                        <div class="container-panel-profile__button container-panel-profile__logout" @click="userLogout">
+                        <div class="container-panel-profile__button container-panel-profile__logout" @click="userLogout" v-tippy="{ content: '退出' }">
                             <span class="material-icons">logout</span>
                         </div>
                     </div>
                 </div>
                 <div class="container-panel-profile__detail">
-                    {{ userStore.login.isLogged && userStore.profile.profession.length > 0 && userStore.profile.school.length > 0 ? `${userStore.profile.profession}（${userStore.profile.school}）` : '-' }}
+                    {{
+                        userStore.login.isLogged && userStore.profile.profession.length > 0 && userStore.profile.school.length > 0
+                            ? `${userStore.profile.profession}（${userStore.profile.school}）`
+                            : '-'
+                    }}
                 </div>
             </div>
             <div class="container-panel-profile-wrapper container-panel-profile-login" v-if="!userStore.login.isLogged">
@@ -284,7 +300,7 @@ export default defineComponent({
                 }
 
                 .material-icons {
-                    animation: loading 500ms linear infinite;
+                    animation: loading 500ms ease-in-out infinite;
                     user-select: none;
                 }
             }

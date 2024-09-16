@@ -29,13 +29,22 @@ const userSetting = ref<UserSetting>({
     order: 'asc'
 })
 
-const userSettingOldValue = ref<UserSetting>({
-    course: 1,
-    subject: -1,
-    type: -1,
-    sort_column: 'pid',
-    order: 'asc'
-})
+const saveUserSetting = (): void => {
+    localStorage.setItem('user_setting', JSON.stringify(userSetting.value))
+}
+
+const readUserSetting = (): UserSetting | null => {
+    const response: string | null = localStorage.getItem('user_setting')
+    if (response === null) {
+        return null
+    }
+    return JSON.parse(response)
+}
+
+const savedSetting = readUserSetting()
+if (savedSetting !== null) {
+    userSetting.value = savedSetting
+}
 
 let isDone = ref<boolean>(false)
 let isMark = ref<boolean>(false)
@@ -57,6 +66,10 @@ const renderQuestionCourse = (course: number) => {
 }
 
 const renderQuestionSubject = (course: number, subject: number) => {
+    if (subject === -1) {
+        return renderQuestionCourse(course)
+    }
+
     if (course === 1) {
         switch (subject) {
             case 1:
@@ -170,14 +183,15 @@ const getQuestions = async (params?: any, callback?: any) => {
         if (response.data.data.questions.length === 0) {
             notifyStore.addMessage(
                 'failed',
-                `有没有可能，${renderQuestionSubject(questionsInfo.value.course, questionsInfo.value.subject)}根本就没有${renderQuestionType(userSetting.value.type)}`
+                `有没有可能，${renderQuestionSubject(userSetting.value.course, questionsInfo.value.subject)}根本就没有${renderQuestionType(userSetting.value.type)}`
             )
             notifyStore.addMessage('success', '即将加载原数据')
-            userSetting.value = userSettingOldValue.value
+            userSetting.value = lastUserSetting.value
             setTimeout(() => {
                 getQuestions()
-            }, 500)
+            }, 3000)
         } else {
+            saveUserSetting()
             addQuestion(response.data.data.questions)
         }
 
@@ -203,6 +217,10 @@ const getQuestions = async (params?: any, callback?: any) => {
     }
 }
 
+const debouncedGetQuestions = debounce((params?: any) => {
+    getQuestions(params)
+}, 500)
+
 const currentQuestion = computed(() => {
     return questions.value.find((question) => question.index === currentId.value) || null
 })
@@ -214,24 +232,27 @@ const resetQuestionComplete = () => {
 
 const prevQuestion = () => {
     resetQuestionComplete()
-    const previousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
+    const previousQuestion: any = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
 
     if (previousQuestion) {
         currentId.value = previousQuestion.index
     } else {
-        notifyStore.addMessage('success', '没上一题了姐姐')
+        if (currentId.value === 1) {
+            notifyStore.addMessage('success', '没上一题了姐姐')
+        }
     }
 }
 
 const nextQuestion = () => {
     resetQuestionComplete()
-    const nextQuestion = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
+    const nextQuestion: any = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
 
     if (nextQuestion) {
         currentId.value = nextQuestion.index
     } else {
-        currentId.value = 1
-        notifyStore.addMessage('success', '没下一题了姐姐')
+        if (currentId.value === questionsInfo.value.total_questions) {
+            notifyStore.addMessage('success', '没下一题了姐姐')
+        }
     }
 }
 
@@ -249,7 +270,7 @@ watch(currentId, (newVal, oldVal) => {
 
     if (maxIndex.value - newVal <= 4 && nextPid.value) {
         if (maxIndex.value < questionsInfo.value.total_questions) {
-            getQuestions({ next_pid: nextPid.value })
+            debouncedGetQuestions({ next_pid: nextPid.value })
         }
     }
 
@@ -260,7 +281,7 @@ watch(currentId, (newVal, oldVal) => {
 
     if (newVal - minIndex.value < 4 && prevPid.value) {
         if (minIndex.value > 1) {
-            getQuestions({ prev_pid: prevPid.value })
+            debouncedGetQuestions({ prev_pid: prevPid.value })
         }
     }
 
@@ -331,13 +352,23 @@ const checkAnswer = () => {
     isAnswerCorrect.value = checkAnswerCorrect() ? true : false
 }
 
-const debouncedGetQuestions = debounce(getQuestions, 500)
+const lastUserSetting = ref<UserSetting>({
+    course: 1,
+    subject: -1,
+    type: -1,
+    sort_column: 'pid',
+    order: 'asc'
+})
 
 watch(
     () => JSON.parse(JSON.stringify(userSetting.value)),
     (newVal, oldVal) => {
+        if (newVal.course !== oldVal.course) {
+            userSetting.value.subject = -1
+        }
+
         debouncedGetQuestions()
-        userSettingOldValue.value = oldVal
+        lastUserSetting.value = oldVal
         questions.value = []
         currentId.value = 1
     },
@@ -348,12 +379,6 @@ watch(
 
 const handleKeydown = (event: KeyboardEvent) => {
     switch (event.key) {
-        case 'ArrowUp':
-            console.log(1)
-            break
-        case 'ArrowDown':
-            console.log(2)
-            break
         case 'ArrowLeft':
             prevQuestion()
             break
@@ -361,7 +386,15 @@ const handleKeydown = (event: KeyboardEvent) => {
             nextQuestion()
             break
         case 'Enter':
-            checkAnswer()
+            if (!showAnswer.value) {
+                if (userChoice.value.length > 0 && currentQuestion) {
+                    checkAnswer()
+                } else {
+                    notifyStore.addMessage('failed', '未选择答案')
+                }
+            } else {
+                nextQuestion()
+            }
             break
         default:
             break
@@ -380,8 +413,8 @@ getQuestions()
 </script>
 
 <template>
-    <div class="question-render-wrapper" :class="{ loading: isLoadQuestion }">
-        <div class="question-render-info" v-if="!isLoadQuestion && currentQuestion">
+    <div class="question-render-wrapper" :class="{ loading: isLoadQuestion && questions.length <= 0 }">
+        <div class="question-render-info" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
             <div class="question-render-info__subject">{{ renderQuestionCourse(questionsInfo?.course) }}</div>
             <div class="question-render-info__status">
                 <div class="question-render-info__direction question-render-info__previous" @click="prevQuestion">
@@ -399,7 +432,10 @@ getQuestions()
             <div class="question-render-info__sheet">1111</div>
         </div>
         <div class="question-render-questions">
-            <div class="question-render-question" v-if="!isLoadQuestion && currentQuestion">
+            <div class="question-render-question" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
+                <div class="question-loading-near" v-if="isLoadQuestion && questions.length > 0">
+                    {{ minIndex }} ~ {{ maxIndex }}<span class="material-icons">autorenew</span>
+                </div>
                 <div class="question-type">
                     {{ renderQuestionType(currentQuestion?.type ?? 0) }}
                 </div>
@@ -418,6 +454,25 @@ getQuestions()
                     >
                         <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
                         <div class="question-option-content" v-html="option.txt"></div>
+                    </div>
+                </div>
+                <div class="question-sub-options" v-else>
+                    <div class="question-sub-option" v-for="(sub_option, index) in currentQuestion?.sub_options" :key="index">
+                        <div class="question-sub-option__content" v-html="sub_option.tg"></div>
+                        <div
+                            class="question-option"
+                            v-for="option in sub_option.list"
+                            :key="option.id"
+                            @click="addChoice(option.id)"
+                            :class="{
+                                selected: userChoice.includes(option.id.toString()),
+                                answer: showAnswer && currentQuestion.answer.includes(option.id.toString()),
+                                error: showAnswer && !currentQuestion.answer.includes(option.id.toString()) && userChoice.includes(option.id.toString())
+                            }"
+                        >
+                            <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
+                            <div class="question-option-content" v-html="option.txt"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -444,7 +499,7 @@ getQuestions()
                 <button
                     @click="checkAnswer"
                     v-if="!showAnswer"
-                    v-tippy="{ appendTo: 'parent', content: '其实电脑上直接按方向键或者回车也可以操作哦，点来点去很累' }"
+                    v-tippy="{ appendTo: 'parent', content: '其实电脑上可以按左右键切题和回车键确定题目哦，点来点去有点累。' }"
                 >
                     <span class="material-icons">library_add_check</span>
                     检查
@@ -515,9 +570,19 @@ getQuestions()
     padding: 0;
     height: 100%;
 
+    @keyframes loading {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     .question-render-info {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         font-size: 14px;
         padding: 5px 15px;
         margin: 0 20px;
@@ -618,8 +683,26 @@ getQuestions()
 
     .question-render-questions {
         height: 100%;
+        position: relative;
         overflow-y: auto;
 
+        .question-loading-near {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 14px;
+            position: absolute;
+            top: 6px;
+            right: 20px;
+            user-select: none;
+
+            .material-icons {
+                font-size: 20px;
+                animation: loading 500ms ease-in-out infinite;
+            }
+        }
+
+        @import '@/assets/styles/reset_question.scss';
         .question-render-question {
             height: 100%;
             padding: var(--page-container-practice-margin-vertical) var(--page-container-practice-margin-horizon);
@@ -646,8 +729,20 @@ getQuestions()
                 flex-direction: column;
                 gap: 0.5rem;
 
-                .question-option,
-                .question-sub-option {
+                & {
+                    gap: 0.75rem;
+
+                    .question-sub-option {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                        padding-top: 0.5rem;
+                        margin-top: 0.5rem;
+                        border-top: 1px solid var(--border-color-base);
+                    }
+                }
+
+                .question-option {
                     display: flex;
                     align-items: baseline;
                     padding: 6px 8px;
@@ -662,6 +757,11 @@ getQuestions()
                         font-weight: 600;
                         padding: 0 6px;
                         margin-right: 6px;
+                    }
+
+                    .question-option-content {
+                        display: flex;
+                        flex-wrap: wrap;
                     }
 
                     @media screen and (hover: hover) {
@@ -703,19 +803,9 @@ getQuestions()
             width: 100%;
             height: 100%;
 
-            @keyframes loading {
-                from {
-                    transform: rotate(0deg);
-                }
-
-                to {
-                    transform: rotate(360deg);
-                }
-            }
-
             .material-icons {
                 font-size: 48px;
-                animation: loading 500ms linear infinite;
+                animation: loading 500ms ease-in-out infinite;
                 user-select: none;
             }
         }
