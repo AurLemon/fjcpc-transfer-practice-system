@@ -6,16 +6,15 @@ import NotifyContainer from './components/common/NotifyContainer.vue'
 
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
-import { useNotifyStore } from '@/stores/notify'
-
-import { get, post } from './api/api'
+import { useQuestionStore } from '@/stores/question'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
-const notifyStore = useNotifyStore()
+const questionStore = useQuestionStore()
 
 if (userStore.readLogin()) {
     authStore.getUserProfile();
+    questionStore.getQuestionInfo();
 }
 </script>
 

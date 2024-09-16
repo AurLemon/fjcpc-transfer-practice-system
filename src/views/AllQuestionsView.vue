@@ -17,7 +17,7 @@ export default defineComponent({
 </template>
 
 <style lang="scss" scoped>
-.page-test {
+.page-view {
     padding: 0 !important;
 }
 </style>

@@ -5,6 +5,7 @@ import { useNotifyStore } from '@/stores/notify'
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
+        isLoading: false,
         token: localStorage.getItem('token') || '',
         refreshToken: localStorage.getItem('refresh_token') || ''
     }),
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
             localStorage.removeItem('refresh_token')
         },
         async getUserProfile() {
+            this.isLoading = true
             const userStore = useUserStore()
             const notifyStore = useNotifyStore()
             userStore.login.isLogged = true
@@ -43,22 +45,26 @@ export const useAuthStore = defineStore('auth', {
 
                 if (response.data.code === 200) {
                     userStore.profile = response.data.data
+                    this.isLoading = false
                 } else {
-                    if (response.data.data.type === 'expiry') {
+                    if (response.data.data.type === 'expiry_token') {
                         await this.refreshTokenAndRetry()
-                    } else if (response.data.data.type === 'not_exist') {
+                    } else if (response.data.data.type === 'token_not_exist') {
                         userStore.login.isLogged = false
                         notifyStore.addMessage('failed', '登录状态失效，请重新登录。')
+                        this.isLoading = false
                     } else {
                         notifyStore.addMessage('failed', '无法获取档案信息，请检查网络连接。')
+                        this.isLoading = false
                     }
                 }
             } catch (err) {
-                notifyStore.addMessage('failed', '无法获取档案信息，请检查网络连接。')
+                notifyStore.addMessage('failed', '获取档案信息时返回或请求异常')
+                this.isLoading = false
             }
         },
         async refreshTokenAndRetry() {
-            const userStore = useUserStore()
+            this.isLoading = true
             const notifyStore = useNotifyStore()
 
             const refreshToken = this.readRefreshToken()
@@ -66,9 +72,10 @@ export const useAuthStore = defineStore('auth', {
                 const response: any = await post('/auth/refresh', {
                     refresh_token: refreshToken
                 })
+
                 if (response.data.code === 200) {
-                    const newAccessToken = response.data.tokens.access_token
-                    const newRefreshToken = response.data.tokens.refresh_token
+                    const newAccessToken = response.data.data.access_token
+                    const newRefreshToken = response.data.data.refresh_token
 
                     this.setToken(newAccessToken)
                     this.setRefreshToken(newRefreshToken)
@@ -78,9 +85,11 @@ export const useAuthStore = defineStore('auth', {
                     this.deleteToken()
                     this.deleteRefreshToken()
                     notifyStore.addMessage('failed', '刷新 token 失败，请重新登录。')
+                    this.isLoading = false
                 }
             } catch (err) {
                 notifyStore.addMessage('failed', '无法刷新 token，请重新登录。')
+                this.isLoading = false
             }
         }
     }

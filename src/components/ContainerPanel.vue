@@ -3,7 +3,9 @@ import { defineComponent } from 'vue'
 import dayjs from 'dayjs'
 
 import { useCardStore } from '@/stores/card'
+import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
+import { useQuestionStore } from '@/stores/question'
 import { useNotifyStore } from '@/stores/notify'
 
 export default defineComponent({
@@ -15,7 +17,7 @@ export default defineComponent({
         }
     },
     methods: {
-        handleLoginCard(state: string) {
+        handleLoginCard(state: string): void {
             switch (state) {
                 case 'open':
                     this.cardStore.showLoginCard = true
@@ -28,24 +30,42 @@ export default defineComponent({
                     break
             }
         },
-        openLoginCard() {
+        openLoginCard(): void {
             this.cardStore.showLoginCard = true
         },
-        userLogout() {
+        userLogout(): void {
             this.notifyStore.addMessage('success', '即将登出')
             setTimeout(() => {
                 this.userStore.userLogout()
                 this.notifyStore.addMessage('success', `已登出（${dayjs().format('YYYY-MM-DD HH:mm:ss')}）`)
             }, 1000)
+        },
+        getCulturalCount(): number {
+            return this.questionStore.questionInfo.cultural_lesson.reduce((sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
+                return sum + lesson.count
+            }, 0)
+        },
+        getProfessionCount(): number {
+            return this.questionStore.questionInfo.profession_lesson.reduce((sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
+                return sum + lesson.count
+            }, 0)
+        },
+        examCountdown(): number {
+            const examDate = '2025-05-15'
+            return dayjs(examDate).diff(dayjs(), 'day')
         }
     },
     setup() {
         const cardStore = useCardStore()
+        const authStore = useAuthStore()
         const userStore = useUserStore()
+        const questionStore = useQuestionStore()
         const notifyStore = useNotifyStore()
         return {
             cardStore,
             userStore,
+            authStore,
+            questionStore,
             notifyStore
         }
     }
@@ -55,21 +75,21 @@ export default defineComponent({
 <template>
     <div class="page-container-panel" :class="{ show: cardStore.mobileShowPanel }">
         <div class="container-panel-countdown">
-            <div class="container-panel-header-countdown" id="total-countdown">
-                <div class="container-panel-header-countdown__value">-</div>
-                <div class="container-panel-header-countdown__label">题目总数</div>
-            </div>
-            <div class="container-panel-header-countdown" id="prof-countdown">
-                <div class="container-panel-header-countdown__value">-</div>
+            <div class="container-panel-header-countdown">
+                <div class="container-panel-header-countdown__value">{{ questionStore.isGetQuestionInfo ? '-' : getProfessionCount() }}</div>
                 <div class="container-panel-header-countdown__label">专业课题目数</div>
             </div>
-            <div class="container-panel-header-countdown" id="general-countdown">
-                <div class="container-panel-header-countdown__value">-</div>
+            <div class="container-panel-header-countdown">
+                <div class="container-panel-header-countdown__value">{{ questionStore.isGetQuestionInfo ? '-' : getCulturalCount() }}</div>
                 <div class="container-panel-header-countdown__label">文化课题目数</div>
             </div>
-            <div class="container-panel-header-countdown" id="exam-countdown">
-                <div class="container-panel-header-countdown__value">-</div>
-                <div class="container-panel-header-countdown__label">距离转轨考还有（天）</div>
+            <div class="container-panel-header-countdown">
+                <div class="container-panel-header-countdown__value">{{ questionStore.isGetQuestionInfo ? '-' : getCulturalCount() + getProfessionCount() }}</div>
+                <div class="container-panel-header-countdown__label">题目总数</div>
+            </div>
+            <div class="container-panel-header-countdown">
+                <div class="container-panel-header-countdown__value">{{ examCountdown() }}</div>
+                <div class="container-panel-header-countdown__label">离转轨考还有几天</div>
             </div>
         </div>
         <div class="container-panel-status">
@@ -82,7 +102,7 @@ export default defineComponent({
             </div>
         </div>
         <div class="container-panel-profile">
-            <div class="container-panel-profile-wrapper container-panel-profile-info" :class="{ blur: !userStore.login.isLogged }">
+            <div class="container-panel-profile-wrapper container-panel-profile-info" :class="{ blur: !userStore.login.isLogged || authStore.isLoading }">
                 <div class="container-panel-profile__greeting">
                     {{ userStore.login.isLogged && userStore.profile.name.length > 0 ? `${userStore.profile.name[0]}同学，你好。` : '-' }}
                 </div>
@@ -109,6 +129,9 @@ export default defineComponent({
                     <div class="info" v-if="!cardStore.showLoginCard">打开登录面板</div>
                     <div class="info" v-else>请在登录面板内操作</div>
                 </button>
+            </div>
+            <div class="container-panel-profile-wrapper container-panel-profile-loading" v-if="authStore.isLoading">
+                <div class="loading material-icons">autorenew</div>
             </div>
         </div>
     </div>
@@ -212,7 +235,10 @@ export default defineComponent({
                 gap: 12px;
                 padding: 10px;
                 position: absolute;
-                inset: 0;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
 
                 .container-panel-profile-login__title {
                     font-size: 22px;
@@ -234,6 +260,32 @@ export default defineComponent({
                         background: var(--background-color-primary--hover);
                         cursor: not-allowed;
                     }
+                }
+            }
+
+            .container-panel-profile-loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+
+                @keyframes loading {
+                    from {
+                        transform: rotate(0deg);
+                    }
+
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+
+                .material-icons {
+                    animation: loading 500ms linear infinite;
+                    user-select: none;
                 }
             }
         }

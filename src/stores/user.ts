@@ -14,7 +14,9 @@ export const useUserStore = defineStore('user', {
             profession: '',
             last_login: '',
             reg_date: ''
-        }
+        },
+        progress: {},
+        setting: {}
     }),
     actions: {
         setLogin(status: boolean = true) {
