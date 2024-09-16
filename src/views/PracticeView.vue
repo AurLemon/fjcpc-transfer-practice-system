@@ -4,26 +4,24 @@
             <div class="page-practice-info__doing">-</div>
             <div class="page-practice-info__detail">
                 <div class="page-practice-info__back">
-                    <img src="../assets/images/icon_back.svg">
+                    <img src="../assets/images/icon_back.svg" />
                 </div>
                 <div class="page-practice-info__volume">-/-</div>
                 <div class="page-practice-info__forward">
-                    <img src="../assets/images/icon_forward.svg">
+                    <img src="../assets/images/icon_forward.svg" />
                 </div>
             </div>
             <div class="page-practice-info__pid">-</div>
             <div class="page-practice-info-sheet">
                 <div class="page-practice-info-sheet__title">答题卡</div>
                 <ul class="page-practice-info-sheet__list">
-                    <li class="done page-practice-info-sheet__item" onclick="mainModule.navigateToQuestion('100053973')"
-                        question-number="100053973"></li>
+                    <li class="done page-practice-info-sheet__item" onclick="mainModule.navigateToQuestion('100053973')" question-number="100053973"></li>
                 </ul>
             </div>
         </div>
         <div class="page-practice-question">
             <div class="page-practice-question__type"></div>
-            <div class="page-practice-question--main">
-            </div>
+            <div class="page-practice-question--main"></div>
         </div>
         <div class="page-practice-tools">
             <div class="page-practice-question__answer">
@@ -63,13 +61,15 @@
                 <button onclick="mainModule.updatePracticeLoad()" id="practice-confirm-answer">确认</button>
             </div>
             <div class="page-practice-tools__buttons">
-                <div class="page-practice-tools__button" id="practice-feedback"
-                    onclick="mainModule.showMessage('success', '<span>反馈请加博主qq2115386831</span><span>题目的问题找班主任</span>', 3000)">
-                    <img src="../assets/images/icon_feedback.svg">
+                <div
+                    class="page-practice-tools__button"
+                    id="practice-feedback"
+                    onclick="mainModule.showMessage('success', '<span>反馈请加博主qq2115386831</span><span>题目的问题找班主任</span>', 3000)"
+                >
+                    <img src="../assets/images/icon_feedback.svg" />
                 </div>
-                <div class="page-practice-tools__button" id="practice-star"
-                    onclick="mainModule.toggleBookmark($('.page-practice-info__pid').text())">
-                    <img src="../assets/images/icon_star.svg">
+                <div class="page-practice-tools__button" id="practice-star" onclick="mainModule.toggleBookmark($('.page-practice-info__pid').text())">
+                    <img src="../assets/images/icon_star.svg" />
                 </div>
             </div>
         </div>
@@ -97,7 +97,7 @@
     position: relative;
 }
 
-.page-container .page-container-main .page-practice .page-practice-info>[class^="page-practice-info__"] {
+.page-container .page-container-main .page-practice .page-practice-info > [class^='page-practice-info__'] {
     display: flex;
     align-items: center;
     gap: var(--gap-value);
@@ -217,7 +217,7 @@
 
 .page-container .page-container-main .page-practice .page-practice-info .page-practice-info__detail img:hover,
 .page-container .page-container-main .page-practice .page-practice-tools .page-practice-tools__buttons img:hover {
-    background: rgba(0, 0, 0, .1);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .page-container .page-container-main .page-practice .page-practice-info .page-practice-info__detail img:active,
@@ -247,7 +247,7 @@
     background: var(--color-primary);
 }
 
-.page-container .page-container-main .page-practice .page-practice-question[dtlx="8"] .page-practice-question--main {
+.page-container .page-container-main .page-practice .page-practice-question[dtlx='8'] .page-practice-question--main {
     display: flex;
     flex-direction: column;
 }
@@ -266,7 +266,7 @@
     border-bottom: unset;
 }
 
-.page-container .page-container-main .page-practice .page-practice-question[dtlx="8"] .page-practice-question--main>.page-practice-question__title {
+.page-container .page-container-main .page-practice .page-practice-question[dtlx='8'] .page-practice-question--main > .page-practice-question__title {
     margin-bottom: 1rem;
 }
 
@@ -309,7 +309,7 @@
     background: var(--success-color) !important;
 }
 
-.page-container .page-container-main .page-practice .page-practice-question .page-practice-question__option>span:first-child {
+.page-container .page-container-main .page-practice .page-practice-question .page-practice-question__option > span:first-child {
     font-weight: bold;
     margin-right: 10px;
 }

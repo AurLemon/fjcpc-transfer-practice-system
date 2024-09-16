@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import _ from 'lodash-es'
 
 import { get, post } from '@/api/api'
@@ -214,18 +214,21 @@ const resetQuestionComplete = () => {
 
 const prevQuestion = () => {
     resetQuestionComplete()
-    if (currentId.value - 1 > 0) {
-        currentId.value--
+    const previousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
+
+    if (previousQuestion) {
+        currentId.value = previousQuestion.index
     } else {
-        currentId.value = questionsInfo.value.total_questions
         notifyStore.addMessage('success', '没上一题了姐姐')
     }
 }
 
 const nextQuestion = () => {
     resetQuestionComplete()
-    if (currentId.value < questionsInfo.value.total_questions) {
-        currentId.value++
+    const nextQuestion = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
+
+    if (nextQuestion) {
+        currentId.value = nextQuestion.index
     } else {
         currentId.value = 1
         notifyStore.addMessage('success', '没下一题了姐姐')
@@ -240,37 +243,34 @@ watch(currentId, (newVal, oldVal) => {
     minIndex.value = Math.min(...indices)
     maxIndex.value = Math.max(...indices)
 
-    console.log('最小 index:', minIndex.value)
-    console.log('最大 index:', maxIndex.value)
+    // 下面这些打印出来都是给我自己看的
+    // console.log('最小 index:', minIndex.value)
+    // console.log('最大 index:', maxIndex.value)
 
-    // 如果接近最大 index，且有 nextPid，加载更多问题
     if (maxIndex.value - newVal <= 4 && nextPid.value) {
         if (maxIndex.value < questionsInfo.value.total_questions) {
             getQuestions({ next_pid: nextPid.value })
         }
     }
 
-    // 如果 currentId 和最小 index 差值大于 8，移除旧问题
     if (newVal - minIndex.value > 8) {
         questions.value = questions.value.filter((q) => q.index >= newVal - 8)
-        console.log('移除旧问题，剩余问题:', questions.value)
+        // console.log('移除旧问题，剩余问题:', questions.value)
     }
 
-    // 如果接近最小 index，且有 prevPid，加载前面的更多问题
     if (newVal - minIndex.value < 4 && prevPid.value) {
         if (minIndex.value > 1) {
             getQuestions({ prev_pid: prevPid.value })
         }
     }
 
-    // 边界处理，已经到达最前面或最后一题
-    if (newVal === 1 && !prevPid.value) {
-        console.log('已经到最前面，没有更多数据可以加载。')
-    }
+    // if (newVal === 1 && !prevPid.value) {
+    //     console.log('已经到最前面，没有更多数据可以加载。')
+    // }
 
-    if (maxIndex.value >= questionsInfo.value.total_questions && !nextPid.value) {
-        console.log('已经到最后一题，没有更多数据可以加载。')
-    }
+    // if (maxIndex.value >= questionsInfo.value.total_questions && !nextPid.value) {
+    //     console.log('已经到最后一题，没有更多数据可以加载。')
+    // }
 })
 
 const userChoice = ref<string[]>([])
@@ -314,9 +314,13 @@ const renderAnswerNumber = (
                 const subOptionList = subOptions?.[index].list || []
                 return subAnswer.map((a) => subOptionList.find((option) => option.id.toString() === a)?.xx).join('')
             })
-            .join(' ')
+            .sort()
+            .join('-')
     } else {
-        return (answer as string[]).map((a) => options.find((option) => option.id.toString() === a)?.xx).join('')
+        return (answer as string[])
+            .map((a) => options.find((option) => option.id.toString() === a)?.xx)
+            .sort()
+            .join('')
     }
 }
 
@@ -341,6 +345,36 @@ watch(
         deep: true
     }
 )
+
+const handleKeydown = (event: KeyboardEvent) => {
+    switch (event.key) {
+        case 'ArrowUp':
+            console.log(1)
+            break
+        case 'ArrowDown':
+            console.log(2)
+            break
+        case 'ArrowLeft':
+            prevQuestion()
+            break
+        case 'ArrowRight':
+            nextQuestion()
+            break
+        case 'Enter':
+            checkAnswer()
+            break
+        default:
+            break
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('keydown', handleKeydown)
+})
 
 getQuestions()
 </script>
