@@ -100,7 +100,15 @@ const renderQuestionType = (type: number) => {
 
 interface Option {
     id: number
-    xx: string
+    xx?: string
+    txt: string
+    tg?: string
+    list?: SubOption[]
+}
+
+interface SubOption {
+    id: number
+    xx?: string
     txt: string
 }
 
@@ -217,8 +225,8 @@ const getQuestions = async (params?: any, callback?: any) => {
     }
 }
 
-const debouncedGetQuestions = debounce((params?: any) => {
-    getQuestions(params)
+const debouncedGetQuestions = debounce((params?: any, callback?: any) => {
+    getQuestions(params, callback)
 }, 500)
 
 const currentQuestion = computed(() => {
@@ -253,6 +261,30 @@ const nextQuestion = () => {
         if (currentId.value === questionsInfo.value.total_questions) {
             notifyStore.addMessage('success', '没下一题了姐姐')
         }
+    }
+}
+
+const isSheetsActive = ref<boolean>(false)
+
+const activeSheets = () => {
+    isSheetsActive.value = !isSheetsActive.value
+}
+
+const toQuestionByIndex = (indexNumber: number) => {
+    if (questions.value.some((q) => q.index === indexNumber)) {
+        currentId.value = indexNumber
+    } else {
+        debouncedGetQuestions(
+            {
+                index: indexNumber
+            },
+            () => {
+                currentId.value = indexNumber
+                debouncedGetQuestions({
+                    next_pid: nextPid.value
+                })
+            }
+        )
     }
 }
 
@@ -294,16 +326,33 @@ watch(currentId, (newVal, oldVal) => {
     // }
 })
 
-const userChoice = ref<string[]>([])
+const userChoice = ref<string[] | string[][]>([])
 
-const addChoice = (id: number) => {
+const addChoice = (id: number, type?: string, subOptionId?: number) => {
     const stringId = id.toString()
-    const index = userChoice.value.indexOf(stringId)
 
-    if (index === -1) {
-        userChoice.value.push(stringId)
+    if (type === 'sub_options' && subOptionId !== undefined) {
+        if (!Array.isArray(userChoice.value[subOptionId - 1])) {
+            ;(userChoice.value as string[][])[subOptionId - 1] = []
+        }
+
+        const subChoiceArray = (userChoice.value as string[][])[subOptionId - 1]
+
+        const indexInSub = subChoiceArray.indexOf(stringId)
+
+        if (indexInSub === -1) {
+            subChoiceArray.push(stringId)
+        } else {
+            subChoiceArray.splice(indexInSub, 1)
+        }
     } else {
-        userChoice.value.splice(index, 1)
+        const index = (userChoice.value as string[]).indexOf(stringId)
+
+        if (index === -1) {
+            ;(userChoice.value as string[]).push(stringId)
+        } else {
+            ;(userChoice.value as string[]).splice(index, 1)
+        }
     }
 }
 
@@ -332,14 +381,18 @@ const renderAnswerNumber = (
     if (Array.isArray(answer[0])) {
         return (answer as string[][])
             .map((subAnswer, index) => {
-                const subOptionList = subOptions?.[index].list || []
-                return subAnswer.map((a) => subOptionList.find((option) => option.id.toString() === a)?.xx).join('')
+                const subOptionList = subOptions?.[index]?.list || []
+                return subAnswer
+                    .map((a) => {
+                        const option = subOptionList.find((opt) => opt.id.toString() === a)
+                        return option?.xx || ''
+                    })
+                    .join('')
             })
-            .sort()
             .join('-')
     } else {
         return (answer as string[])
-            .map((a) => options.find((option) => option.id.toString() === a)?.xx)
+            .map((a) => options.find((opt) => opt.id.toString() === a)?.xx || '')
             .sort()
             .join('')
     }
@@ -428,8 +481,23 @@ getQuestions()
                     <span class="material-icons">keyboard_arrow_right</span>
                 </div>
             </div>
-            <div class="question-render-info__id" v-tippy="{ appendTo: 'parent', content: '题目在船政系统里面的编号' }">{{ currentQuestion?.pid }}</div>
-            <div class="question-render-info__sheet">1111</div>
+            <div class="question-render-info__id" @click="activeSheets" v-tippy="{ appendTo: 'parent', content: '题目在船政系统里面的编号' }">
+                {{ currentQuestion?.pid }}
+            </div>
+            <div class="question-render-info__sheets" :class="{ active: isSheetsActive }">
+                <div class="question-render-info__title">答题卡</div>
+                <div class="question-render-info__wrapper">
+                    <div
+                        class="question-render-info__sheet"
+                        v-for="n in questionsInfo?.total_questions"
+                        :key="n"
+                        :class="{ current: currentId === n }"
+                        @click="toQuestionByIndex(n)"
+                    >
+                        {{ n }}
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="question-render-questions">
             <div class="question-render-question" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
@@ -463,11 +531,16 @@ getQuestions()
                             class="question-option"
                             v-for="option in sub_option.list"
                             :key="option.id"
-                            @click="addChoice(option.id)"
+                            @click="addChoice(option.id, 'sub_options', index + 1)"
                             :class="{
-                                selected: userChoice.includes(option.id.toString()),
-                                answer: showAnswer && currentQuestion.answer.includes(option.id.toString()),
-                                error: showAnswer && !currentQuestion.answer.includes(option.id.toString()) && userChoice.includes(option.id.toString())
+                                // 如果 userChoice 是 string[][] 结构，检查子选项是否包含当前选项
+                                selected: Array.isArray(userChoice[index]) && userChoice[index].includes(option.id.toString()),
+                                answer: showAnswer && currentQuestion.answer[index].includes(option.id.toString()),
+                                error:
+                                    showAnswer &&
+                                    !currentQuestion.answer[index].includes(option.id.toString()) &&
+                                    userChoice[index] &&
+                                    userChoice[index].includes(option.id.toString())
                             }"
                         >
                             <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
@@ -485,14 +558,24 @@ getQuestions()
                 <div class="question-answer-infos">
                     <div class="question-answer-user question-answer-info" v-if="showAnswer">
                         <div class="question-answer-user__label question-answer-info__label">你的答案</div>
-                        <div class="question-answer-user__answer question-answer-info__answer" :class="{ error: !isAnswerCorrect }">
+                        <div
+                            class="question-answer-user__answer question-answer-info__answer"
+                            :class="{ error: !isAnswerCorrect }"
+                            v-if="currentQuestion && currentQuestion.options"
+                        >
                             {{ renderAnswerNumber(currentQuestion?.type, userChoice, currentQuestion?.options || []) }}
+                        </div>
+                        <div class="question-answer-user__answer question-answer-info__answer" :class="{ error: !isAnswerCorrect }" v-else>
+                            {{ renderAnswerNumber(currentQuestion?.type, userChoice, [], currentQuestion?.sub_options || []) }}
                         </div>
                     </div>
                     <div class="question-answer-system question-answer-info" v-if="showAnswer">
                         <div class="question-answer-system__label question-answer-info__label">正确答案</div>
-                        <div class="question-answer-system__answer question-answer-info__answer">
+                        <div class="question-answer-system__answer question-answer-info__answer" v-if="currentQuestion && currentQuestion.options">
                             {{ renderAnswerNumber(currentQuestion?.type, currentQuestion?.answer || [], currentQuestion?.options || []) }}
+                        </div>
+                        <div class="question-answer-system__answer question-answer-info__answer" v-else>
+                            {{ renderAnswerNumber(currentQuestion?.type, currentQuestion?.answer || [], [], currentQuestion?.sub_options || []) }}
                         </div>
                     </div>
                 </div>
@@ -649,9 +732,11 @@ getQuestions()
 
         .question-render-info__id {
             justify-content: flex-end;
+            user-select: none;
+            cursor: pointer;
         }
 
-        .question-render-info__sheet {
+        .question-render-info__sheets {
             --page-practice-sheet-height: 250px;
             --page-practice-sheet-title-height: 20px;
             height: 0;
@@ -659,24 +744,68 @@ getQuestions()
             opacity: 0;
             pointer-events: none;
             user-select: none;
-            border: 1px solid var(--border-color-base--lighter);
+            border: 1px solid var(--border-color-base);
             border-radius: 12px;
-            background: var(--color-surface-2);
-            box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
+            background: var(--background-color-overlay--lighter);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 1px 4px var(--border-color-base);
             position: absolute;
             top: 100%;
             right: 0;
-            z-index: 1;
+            z-index: 101;
             overflow: hidden;
             transition: var(--transition-hover);
 
             &.active {
                 height: var(--page-practice-sheet-height);
                 padding: 6px;
-                box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
                 opacity: 1;
                 pointer-events: all;
                 user-select: auto;
+                overflow-y: auto;
+            }
+
+            .question-render-info__title {
+                color: var(--color-surface-4);
+                font-size: 12px;
+                padding: 0.25rem;
+                padding-bottom: 0.5rem;
+            }
+
+            .question-render-info__wrapper {
+                display: grid;
+                grid-gap: 0.25rem;
+                grid-template-columns: repeat(5, 1fr);
+
+                .question-render-info__sheet {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 6px;
+                    background: var(--background-color-primary--active);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: 150ms ease;
+
+                    &:hover {
+                        color: var(--color-surface-0);
+                        background: var(--color-primary);
+                    }
+
+                    &.current {
+                        color: var(--color-surface-0);
+                        font-weight: 600;
+                        background: var(--color-primary);
+
+                        &:hover {
+                            background: var(--color-base--subtle);
+                        }
+                    }
+
+                    &:active {
+                        transform: scale(0.99);
+                    }
+                }
             }
         }
     }
@@ -729,15 +858,14 @@ getQuestions()
                 flex-direction: column;
                 gap: 0.5rem;
 
-                & {
+                &.question-sub-options {
                     gap: 0.75rem;
 
                     .question-sub-option {
                         display: flex;
                         flex-direction: column;
                         gap: 0.5rem;
-                        padding-top: 0.5rem;
-                        margin-top: 0.5rem;
+                        padding-top: 0.75rem;
                         border-top: 1px solid var(--border-color-base);
                     }
                 }

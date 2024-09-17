@@ -20,4 +20,14 @@
             }
         }
     }
+    
+    .question-option {
+        &.answer, &.error {
+            .question-content, .question-option-content, .question-sub-option__content {
+                &, span {
+                    color: var(--color-surface-0) !important;
+                }
+            }
+        }
+    }
 }

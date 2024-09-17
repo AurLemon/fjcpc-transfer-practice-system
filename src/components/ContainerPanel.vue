@@ -32,9 +32,11 @@ export default defineComponent({
         },
         openLoginCard(): void {
             this.cardStore.showLoginCard = true
+            this.cardStore.mobileShowPanel = false
         },
         userLogout(): void {
             this.notifyStore.addMessage('success', '即将登出')
+            this.cardStore.mobileShowPanel = false
             setTimeout(() => {
                 this.userStore.userLogout()
                 this.notifyStore.addMessage('success', `已登出（${dayjs().format('YYYY-MM-DD HH:mm:ss')}）`)
