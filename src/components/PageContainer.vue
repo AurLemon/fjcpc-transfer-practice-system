@@ -20,12 +20,27 @@ import PageViewContainer from './PageViewContainer.vue'
                 <router-link to="/debug" class="page-container-main-tools__button" :exact-active-class="'active'">调试</router-link>
             </div>
             <div class="page-container-main-wrapper">
-                <RouterView />
+                <Transition name="route">
+                    <RouterView />
+                </Transition>
                 <PageViewContainer />
             </div>
         </div>
     </main>
 </template>
+
+<style lang="scss" scoped>
+.route-enter-active,
+.route-leave-active {
+    transition: 300ms ease;
+}
+
+.route-enter-from,
+.enter-leave-to {
+    transform: translateX(-20px);
+    opacity: 0;
+}
+</style>
 
 <style lang="scss" scoped>
 @use '@/assets/styles/media_screen.scss' as screen;

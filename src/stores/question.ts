@@ -33,8 +33,6 @@ export const useQuestionStore = defineStore('question', {
             } catch (err) {
                 notifyStore.addMessage('failed', '无法获取题库信息，请检查网络连接。')
             }
-        },
-        addQuestion() {},
-        clearQuestion() {}
+        }
     }
 })

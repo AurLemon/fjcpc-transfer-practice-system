@@ -163,11 +163,16 @@ const addPosterClickCount = () => {
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/styles/media_screen.scss' as screen;
+
 .page-guide {
+    display: flex;
+    flex-direction: column;
     background: radial-gradient(ellipse at 5% 0%, rgb(57 157 191 / 6%) 0, transparent 75%),
         radial-gradient(ellipse at 60% 0%, rgb(15 121 145 / 6%) 0, transparent 75%);
     background-size: auto 35%;
     background-repeat: no-repeat;
+    overflow-y: auto;
 
     .page-guide-header {
         display: flex;
@@ -177,6 +182,12 @@ const addPosterClickCount = () => {
         margin: 0 1.25rem;
         margin-bottom: 4rem;
 
+        @include screen.media-screen(phone) {
+            padding-top: 0;
+            margin: 0;
+            flex-direction: column-reverse;
+        }
+
         .page-guide-text {
             display: flex;
             flex-direction: column;
@@ -185,7 +196,7 @@ const addPosterClickCount = () => {
 
             .page-guide-title {
                 font-size: 26px;
-                font-weight: 500;
+                font-weight: 400;
             }
 
             .page-guide-subtitle {
@@ -217,7 +228,7 @@ const addPosterClickCount = () => {
             position: absolute;
             top: 0;
             right: 0;
-            bottom: 0;
+            height: 160px;
             padding: 0.5rem;
             border-radius: 50%;
             overflow: hidden;
@@ -225,6 +236,11 @@ const addPosterClickCount = () => {
             user-select: none;
             cursor: pointer;
             transition: 250ms ease;
+
+            @include screen.media-screen(phone) {
+                width: 160px;
+                position: static;
+            }
 
             img {
                 display: block;
@@ -251,6 +267,10 @@ const addPosterClickCount = () => {
         grid-gap: 1rem;
         margin: 2rem 1rem;
 
+        @include screen.media-screen(phone) {
+            grid-template-columns: repeat(1, 1fr);
+        }
+
         .page-guide-desc__block {
             display: flex;
             align-items: center;
@@ -267,6 +287,7 @@ const addPosterClickCount = () => {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
+            height: 100%;
         }
 
         .page-guide-desc__title {
@@ -286,6 +307,7 @@ const addPosterClickCount = () => {
         gap: 1.25rem;
         padding: 0.75rem 1.5rem;
         margin: 0 0.75rem;
+        margin-top: auto;
         border-radius: 12px;
         background: var(--color-surface-2);
 

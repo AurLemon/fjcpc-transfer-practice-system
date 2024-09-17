@@ -13,9 +13,10 @@ const userStore = useUserStore()
 const questionStore = useQuestionStore()
 
 if (userStore.readLogin()) {
-    authStore.getUserProfile();
-    questionStore.getQuestionInfo();
+    authStore.getUserProfile()
 }
+
+questionStore.getQuestionInfo()
 </script>
 
 <template>
