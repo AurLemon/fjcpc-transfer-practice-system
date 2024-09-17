@@ -944,7 +944,7 @@ getQuestions()
         justify-content: space-between;
         align-items: center;
         padding: 10px 15px;
-        background: var(--color-surface-2);
+        background: var(--border-color-base--lighter);
         position: relative;
         transition: 250ms ease;
 

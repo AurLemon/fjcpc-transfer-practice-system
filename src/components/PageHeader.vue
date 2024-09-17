@@ -24,23 +24,13 @@ export default defineComponent({
             <div class="page-menu-title" @click="showMobilePanel">计大船政转轨考の刷题系统3.0</div>
             <div class="page-menu-list">
                 <div class="page-menu-link">
-                    <a href="https://wiki.hydcraft.cn/Player:%E6%9F%A0%E6%AA%AC" target="_blank">
-                        <img src="../assets/images/logo_aurlemon.jpg" alt="项目开发者头像" />
+                    <a href="https://www.fjcpc.edu.cn/" target="_blank" v-tippy="{ content: '船政官网' }">
+                        <img src="../assets/images/logo/fjcpc_logo.png" alt="福建船政交通职业学院" />
                     </a>
                 </div>
                 <div class="page-menu-link">
-                    <a href="https://fjgmxx.cn" target="_blank">
-                        <img src="../assets/images/logo_fjgm.png" alt="福建工贸学校" />
-                    </a>
-                </div>
-                <div class="page-menu-link">
-                    <a href="https://www.fjcpc.edu.cn/" target="_blank">
-                        <img src="../assets/images/logo_fjcpc.png" alt="福建船政交通职业学院" />
-                    </a>
-                </div>
-                <div class="page-menu-link">
-                    <a href="https://gitee.com/aurlemon/fjcpc-transfer-qb" target="_blank">
-                        <img src="../assets/images/logo_gitee.svg" alt="Gitee 项目地址" />
+                    <a href="https://github.com/AurLemon/fjcpc-transfer-practice-system" target="_blank" v-tippy="{ content: '项目 GitHub 仓库' }">
+                        <img src="../assets/images/logo/GitHub_logo.svg" alt="Gitee 项目地址" />
                     </a>
                 </div>
             </div>
@@ -112,10 +102,10 @@ export default defineComponent({
                 display: block;
                 width: 24px;
                 height: 24px;
-                background: var(--color-surface-0);
             }
 
             &:hover {
+                filter: brightness(1.1);
                 transform: scale(1.05);
             }
         }

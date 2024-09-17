@@ -105,7 +105,7 @@ import PageViewContainer from './PageViewContainer.vue'
 
         .page-container-slide {
             height: 100%;
-            padding: 15px;
+            padding: 1.5rem;
         }
     }
 }

@@ -7,11 +7,11 @@
                     闽ICP备2023007345号-3
                 </a>
                 <a href="https://appzb.fjcpc.edu.cn/kszx-test32/#/login" target="_blank">
-                    <img src="../assets/images/logo_fjcpc.png" width="16" height="16" />
+                    <img src="../assets/images/logo/fjcpc_logo.png" width="16" height="16" />
                     船政转轨考练习中心
                 </a>
                 <a href="https://appzb.fjcpc.edu.cn/kszx-test32-app/#/login" target="_blank">
-                    <img src="../assets/images/logo_fjcpc.png" width="16" height="16" />
+                    <img src="../assets/images/logo/fjcpc_logo.png" width="16" height="16" />
                     船政转轨考练习中心（移动端）
                 </a>
             </div>

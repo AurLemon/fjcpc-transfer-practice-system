@@ -1,19 +1,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
-import QuestionRender from '@/components/question/QuestionRender.vue'
 
 export default defineComponent({
-    name: 'AllQuestionsView',
-    components: {
-        QuestionRender
-    }
+    name: 'AllQuestionsView'
 })
 </script>
 
 <template>
-    <div class="page-container-slide page-view">
-        <QuestionRender />
-    </div>
+    <div class="page-container-slide page-view"></div>
 </template>
 
 <style lang="scss" scoped>

@@ -23,6 +23,7 @@
         "lodash-es": "^4.17.21",
         "material-icons": "^1.13.12",
         "pinia": "^2.1.7",
+        "simple-icons": "^13.10.0",
         "sm-crypto-v2": "^1.9.2",
         "sqlite3": "^5.1.7",
         "vue": "^3.5.0",
