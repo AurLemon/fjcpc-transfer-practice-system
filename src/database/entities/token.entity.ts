@@ -1,9 +1,9 @@
 // src/database/entities/token.entity
 
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm';
 @Entity('tokens')
 export class Token {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn({ type: 'varchar', length: 36 })
   uuid: string; // 生成的 UUID 主键
 
   @Column({ type: 'varchar', length: 500 })

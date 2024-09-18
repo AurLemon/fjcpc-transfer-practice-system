@@ -112,7 +112,7 @@ export class QuestionService {
             ? existingQuestion.incorrect_count
             : 0,
           status: true,
-          crawl_count: existingQuestion ? existingQuestion.crawl_count + 1 : 1,
+          crawl_count: existingQuestion ? existingQuestion.crawl_count : 1,
         };
 
         if (existingQuestion) {
@@ -234,41 +234,348 @@ export class QuestionService {
 
   // 统计信息
   async getStat() {
-    const culturalLessonStat = {
-      chinese: await this.questionsRepository.count({
-        where: { course: 1, subject: 1 },
-      }),
-      math: await this.questionsRepository.count({
-        where: { course: 1, subject: 2 },
-      }),
-      english: await this.questionsRepository.count({
-        where: { course: 1, subject: 3 },
-      }),
-      politics: await this.questionsRepository.count({
-        where: { course: 1, subject: 4 },
-      }),
-    };
+    const culturalLessonStat = [
+      {
+        subject: 1,
+        id: 'chinese',
+        name: '语文',
+        count: await this.questionsRepository.count({
+          where: { course: 1, subject: 1 },
+        }),
+      },
+      {
+        subject: 2,
+        id: 'math',
+        name: '数学',
+        count: await this.questionsRepository.count({
+          where: { course: 1, subject: 2 },
+        }),
+      },
+      {
+        subject: 3,
+        id: 'english',
+        name: '英语',
+        count: await this.questionsRepository.count({
+          where: { course: 1, subject: 3 },
+        }),
+      },
+      {
+        subject: 4,
+        id: 'politics',
+        name: '政治',
+        count: await this.questionsRepository.count({
+          where: { course: 1, subject: 4 },
+        }),
+      },
+    ];
 
     const professionLessons = await this.requestInfoRepository.find({
       where: { course: 2 },
     });
 
-    const professionLessonStat = {};
+    const professionLessonStat = [];
 
     for (const profession of professionLessons) {
-      const professionKey = profession.profession_id;
+      const professionId = profession.profession_id;
+      const professionName = profession.profession_name;
       const subjectId = profession.subject;
 
       const count = await this.questionsRepository.count({
         where: { course: 2, subject: subjectId },
       });
 
-      professionLessonStat[professionKey] = count;
+      professionLessonStat.push({
+        subject: subjectId,
+        id: professionId,
+        name: professionName,
+        count: count,
+      });
     }
 
     return {
       cultural_lesson: culturalLessonStat,
       profession_lesson: professionLessonStat,
+    };
+  }
+
+  // 刷题接口
+  async getPracticeQuestions(
+    course: number,
+    subject: number,
+    type: number = -1,
+    sortColumn: string = 'pid',
+    order: 'ASC' | 'DESC' = 'ASC',
+    nextPagePid?: string,
+    prevPagePid?: string,
+    index: number = 0,
+  ): Promise<{
+    questions: Question[];
+    nextPid: string | null;
+    prevPid: string | null;
+    stat: any;
+  }> {
+    const pageSize = 5;
+
+    const baseQueryBuilder = this.questionsRepository
+      .createQueryBuilder('question')
+      .where('question.course = :course', { course });
+
+    if (subject !== -1) {
+      baseQueryBuilder.andWhere('question.subject = :subject', { subject });
+    }
+
+    if (type !== -1) {
+      baseQueryBuilder.andWhere('question.type = :type', { type });
+    }
+
+    const totalQuestions = await baseQueryBuilder.getCount();
+
+    let startingIndex = 0;
+    let prevPid: string | null = null;
+    let nextPid: string | null = null;
+    let questions: Question[] = [];
+    let questionsWithIndex: any[] = [];
+
+    if (nextPagePid) {
+      const cursorQuestion = await this.questionsRepository.findOne({
+        where: { pid: nextPagePid },
+      });
+      if (!cursorQuestion) {
+        throw new Error(`Invalid nextPagePid: ${nextPagePid}`);
+      }
+      const cursorSortValue = cursorQuestion[sortColumn];
+
+      let count: number;
+      if (order === 'ASC') {
+        count = await baseQueryBuilder
+          .clone()
+          .andWhere(
+            `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
+            {
+              cursorSortValue,
+              cursorPid: nextPagePid,
+            },
+          )
+          .getCount();
+        // Adjust startingIndex to avoid skipping the cursor
+        startingIndex = count + 2;
+      } else {
+        count = await baseQueryBuilder
+          .clone()
+          .andWhere(
+            `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
+            {
+              cursorSortValue,
+              cursorPid: nextPagePid,
+            },
+          )
+          .getCount();
+        // Adjust startingIndex to avoid skipping the cursor
+        startingIndex = count + 2;
+      }
+
+      const queryBuilder = baseQueryBuilder.clone();
+      if (order === 'ASC') {
+        queryBuilder.andWhere(
+          `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
+          {
+            cursorSortValue,
+            cursorPid: nextPagePid,
+          },
+        );
+      } else {
+        queryBuilder.andWhere(
+          `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
+          {
+            cursorSortValue,
+            cursorPid: nextPagePid,
+          },
+        );
+      }
+
+      queryBuilder
+        .orderBy(`question.${sortColumn}`, order)
+        .addOrderBy('question.pid', order);
+
+      questions = await queryBuilder.take(pageSize).getMany();
+
+      if (questions.length > 0) {
+        nextPid =
+          questions.length === pageSize
+            ? questions[questions.length - 1].pid
+            : null;
+        prevPid = questions[0].pid;
+      }
+
+      questionsWithIndex = questions.map((question, i) => ({
+        index: startingIndex + i,
+        ...question,
+      }));
+
+      return {
+        questions: questionsWithIndex,
+        nextPid,
+        prevPid,
+        stat: {
+          course,
+          subject,
+          type,
+          order,
+          sort_column: sortColumn,
+          total_questions: totalQuestions,
+        },
+      };
+    }
+
+    if (prevPagePid) {
+      const cursorQuestion = await this.questionsRepository.findOne({
+        where: { pid: prevPagePid },
+      });
+      if (!cursorQuestion) {
+        throw new Error(`Invalid prevPagePid: ${prevPagePid}`);
+      }
+      const cursorSortValue = cursorQuestion[sortColumn];
+
+      let count: number;
+      if (order === 'ASC') {
+        count = await baseQueryBuilder
+          .clone()
+          .andWhere(
+            `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
+            {
+              cursorSortValue,
+              cursorPid: prevPagePid,
+            },
+          )
+          .getCount();
+        // Adjust startingIndex for previous page
+        startingIndex = count - pageSize + 1;
+        if (startingIndex < 1) startingIndex = 1;
+      } else {
+        count = await baseQueryBuilder
+          .clone()
+          .andWhere(
+            `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
+            {
+              cursorSortValue,
+              cursorPid: prevPagePid,
+            },
+          )
+          .getCount();
+        // Adjust startingIndex for previous page
+        startingIndex = count - pageSize + 1;
+        if (startingIndex < 1) startingIndex = 1;
+      }
+
+      const queryBuilder = baseQueryBuilder.clone();
+      if (order === 'ASC') {
+        queryBuilder.andWhere(
+          `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
+          {
+            cursorSortValue,
+            cursorPid: prevPagePid,
+          },
+        );
+      } else {
+        queryBuilder.andWhere(
+          `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
+          {
+            cursorSortValue,
+            cursorPid: prevPagePid,
+          },
+        );
+      }
+
+      queryBuilder
+        .orderBy(`question.${sortColumn}`, order === 'ASC' ? 'DESC' : 'ASC')
+        .addOrderBy('question.pid', order === 'ASC' ? 'DESC' : 'ASC');
+
+      questions = await queryBuilder.take(pageSize).getMany();
+
+      questions.reverse();
+
+      if (questions.length > 0) {
+        nextPid =
+          questions.length === pageSize
+            ? questions[questions.length - 1].pid
+            : null;
+        prevPid = startingIndex > 1 ? questions[0].pid : null;
+      }
+
+      questionsWithIndex = questions.map((question, i) => ({
+        index: startingIndex + i,
+        ...question,
+      }));
+
+      return {
+        questions: questionsWithIndex,
+        nextPid,
+        prevPid,
+        stat: {
+          course,
+          subject,
+          type,
+          order,
+          sort_column: sortColumn,
+          total_questions: totalQuestions,
+        },
+      };
+    }
+
+    // Initial page without nextPagePid or prevPagePid
+    if (index >= totalQuestions) {
+      return {
+        questions: [],
+        nextPid: null,
+        prevPid: null,
+        stat: {
+          course,
+          subject,
+          type,
+          order,
+          sort_column: sortColumn,
+          total_questions: totalQuestions,
+        },
+      };
+    }
+
+    const initialQueryBuilder = baseQueryBuilder
+      .clone()
+      .orderBy(`question.${sortColumn}`, order)
+      .addOrderBy('question.pid', order)
+      .skip(index)
+      .take(pageSize);
+
+    const initialQuestions = await initialQueryBuilder.getMany();
+
+    const questionsWithIndexInitial = initialQuestions.map((question, i) => ({
+      index: index + i + 1,
+      ...question,
+    }));
+
+    nextPid =
+      initialQuestions.length === pageSize
+        ? initialQuestions[initialQuestions.length - 1].pid
+        : null;
+    prevPid =
+      index > 0
+        ? initialQuestions.length > 0
+          ? initialQuestions[0].pid
+          : null
+        : null;
+
+    return {
+      questions: questionsWithIndexInitial,
+      nextPid,
+      prevPid,
+      stat: {
+        course,
+        subject,
+        type,
+        order,
+        sort_column: sortColumn,
+        total_questions: totalQuestions,
+      },
     };
   }
 }

@@ -7,6 +7,8 @@ import { Token } from '../database/entities/token.entity';
 import { User } from '../database/entities/user.entity';
 import * as jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { CryptoUtil } from '../common/crypto.util';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class TokenService {
@@ -16,6 +18,9 @@ export class TokenService {
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly userService: UserService,
+    private readonly cryptoUtil: CryptoUtil,
   ) {}
 
   async generateTokens(userUuid: string): Promise<{
@@ -82,32 +87,88 @@ export class TokenService {
     return newTokens;
   }
 
-  // 验证 Token 有效性
-  async validateAccessToken(
-    access_token: string,
-  ): Promise<{ valid: boolean; message: string; permission?: number }> {
+  // 验证 Token
+  async validateAccessToken(access_token: string): Promise<{
+    valid: boolean;
+    reason: string;
+    message: string;
+    result?: {
+      uuid: string;
+      id_number: string;
+      name: string;
+      school: string;
+      profession: string;
+      last_login: Date;
+      reg_date: Date;
+    };
+  }> {
     const token = await this.tokenRepository.findOne({
       where: { access_token },
     });
 
     if (!token) {
-      return { valid: false, message: 'Token 不存在' };
+      return { valid: false, reason: 'not_exist', message: 'Token 不存在' };
     }
 
     if (Date.now() > token.access_token_expiry) {
-      return { valid: false, message: 'Token 已过期' };
+      return {
+        valid: false,
+        reason: 'expiry',
+        message: 'Token 已过期',
+      };
     }
 
     try {
       const decoded = jwt.verify(access_token, 'secret', {
         algorithms: ['HS256'],
       });
-      const { permission } = decoded as { permission: number };
+      const { uuid } = decoded as { uuid: string };
 
-      return { valid: true, message: 'Token 有效', permission };
+      const user = await this.userService.findUserByUuid(uuid);
+      if (!user) {
+        return {
+          valid: false,
+          reason: 'not_exist',
+          message: '用户不存在',
+        };
+      }
+
+      const [encryptedIdNumber, idNumberKey] = user.id_number.split('$');
+      const [encryptedName, nameKey] = user.name.split('$');
+      const decryptedIdNumber = this.cryptoUtil.aesDecrypt(
+        encryptedIdNumber,
+        idNumberKey,
+      );
+      const decryptedName = this.cryptoUtil.aesDecrypt(encryptedName, nameKey);
+
+      await this.updateLastLogin(user.uuid);
+
+      return {
+        valid: true,
+        reason: 'success',
+        message: 'Token 有效',
+        result: {
+          uuid: user.uuid,
+          id_number: decryptedIdNumber,
+          name: decryptedName,
+          school: user.school,
+          profession: user.profession,
+          last_login: user.last_login,
+          reg_date: user.reg_date,
+        },
+      };
     } catch (err) {
-      return { valid: false, message: err.message };
+      return {
+        valid: false,
+        reason: 'unexpected_error',
+        message: err.message,
+      };
     }
+  }
+
+  // 更新用户的 last_login 字段
+  async updateLastLogin(uuid: string): Promise<void> {
+    await this.userRepository.update(uuid, { last_login: new Date() });
   }
 
   // 根据 token 返回用户权限

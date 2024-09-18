@@ -14,12 +14,38 @@ export class UserService {
     private readonly cryptoUtil: CryptoUtil,
   ) {}
 
-  // 查找用户
+  // 生成随机 Key
+  private generateRandomKey(): string {
+    return Array.from({ length: 8 }, () =>
+      Math.floor(Math.random() * 16).toString(16),
+    ).join('');
+  }
+
+  // 查找用户，仅根据身份证号查找
   async findByIdNumber(id_number: string): Promise<User | null> {
-    const encryptedIdNumber = this.cryptoUtil.hashEncrypt(id_number);
-    return this.userRepository.findOne({
-      where: { id_number: encryptedIdNumber },
-    });
+    const users = await this.userRepository.find();
+
+    for (const user of users) {
+      const [encryptedData, key] = user.id_number.split('$');
+      const decryptedIdNumber = this.cryptoUtil.aesDecrypt(encryptedData, key);
+      if (decryptedIdNumber === id_number) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  // 检查用户的密码是否正确
+  async checkPassword(id_number: string, password: string): Promise<boolean> {
+    const user = await this.findByIdNumber(id_number);
+
+    if (!user) {
+      return false;
+    }
+
+    const encryptedPassword = this.cryptoUtil.hashEncrypt(password);
+
+    return user.password === encryptedPassword;
   }
 
   // 新增用户
@@ -32,9 +58,12 @@ export class UserService {
   ): Promise<User> {
     const regDate = new Date();
 
-    // Hash 加密身份证号、姓名和密码
-    const encryptedIdNumber = this.cryptoUtil.hashEncrypt(id_number);
-    const encryptedName = this.cryptoUtil.hashEncrypt(name);
+    // 生成随机 key 用于 AES 加密
+    const key = this.generateRandomKey();
+
+    // 加密身份证号、姓名和密码（身份证和姓名 AES，密码 SHA256）
+    const encryptedIdNumber = `${this.cryptoUtil.aesEncrypt(id_number, key)}$${key}`;
+    const encryptedName = `${this.cryptoUtil.aesEncrypt(name, key)}$${key}`;
     const encryptedPassword = this.cryptoUtil.hashEncrypt(password);
 
     // 创建新用户实例

@@ -11,6 +11,8 @@ import { LoginKey } from './database/entities/login_key.entity';
 import { RequestInfo } from './database/entities/request_info.entity';
 import { RequestLog } from './database/entities/request_log.entity';
 import { Question } from './database/entities/question.entity';
+import { DoneQuestion } from './database/entities/done_question.entity';
+import { StarQuestion } from './database/entities/star_question.entity';
 import { UpdatedQuestion } from './database/entities/updated_question.entity';
 
 import { AdminModule } from './admin/admin.module';
@@ -39,6 +41,8 @@ import { QuestionModule } from './question/question.module';
               RequestInfo,
               RequestLog,
               Question,
+              DoneQuestion,
+              StarQuestion,
               UpdatedQuestion,
             ],
             synchronize: true,
@@ -58,6 +62,8 @@ import { QuestionModule } from './question/question.module';
               RequestInfo,
               RequestLog,
               Question,
+              DoneQuestion,
+              StarQuestion,
               UpdatedQuestion,
             ],
             synchronize: true,

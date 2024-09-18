@@ -1,7 +1,5 @@
 // src/common/api.response
 
-import { HttpException } from '@nestjs/common';
-
 export class ApiResponseUtil {
   static success(code: number, data: any) {
     return {
@@ -13,17 +11,14 @@ export class ApiResponseUtil {
   }
 
   static error(code: number, type: string, message: string) {
-    throw new HttpException(
-      {
-        code,
-        status: 'error',
-        data: {
-          type,
-          message,
-        },
-        timestamp: Date.now(),
-      },
+    return {
       code,
-    );
+      status: 'error',
+      data: {
+        type,
+        message,
+      },
+      timestamp: Date.now(),
+    };
   }
 }

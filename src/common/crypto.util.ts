@@ -94,10 +94,10 @@ export class CryptoUtil {
   }
 
   // AES 加密
-  aesEncrypt(text: string, key: Date): string {
+  aesEncrypt(text: string, key: string): string {
     const cipher = crypto.createCipheriv(
       'aes-256-cbc',
-      crypto.scryptSync(key.toISOString(), 'salt', 32),
+      crypto.scryptSync(key.toString(), 'salt', 32),
       Buffer.alloc(16, 0),
     );
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -106,10 +106,10 @@ export class CryptoUtil {
   }
 
   // AES 解密
-  aesDecrypt(encryptedText: string, key: Date): string {
+  aesDecrypt(encryptedText: string, key: string): string {
     const decipher = crypto.createDecipheriv(
       'aes-256-cbc',
-      crypto.scryptSync(key.toISOString(), 'salt', 32),
+      crypto.scryptSync(key.toString(), 'salt', 32),
       Buffer.alloc(16, 0), // 初始向量 IV
     );
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
