@@ -40,8 +40,10 @@ export default defineComponent({
         right: 0;
         bottom: 0;
         z-index: 1;
+        user-select: none;
 
         .material-icons {
+            color: var(--color-base--subtle);
             font-size: 48px;
             animation: loading 500ms ease-in-out infinite;
         }

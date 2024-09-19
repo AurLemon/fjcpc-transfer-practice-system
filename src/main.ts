@@ -1,9 +1,11 @@
-import { createApp } from 'vue'
+import { createApp, onMounted } from 'vue'
 import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
 import VueTippy from 'vue-tippy'
+
+import { initDB } from './idb/idb'
 
 import 'tippy.js/dist/tippy.css'
 import 'tippy.js/themes/light.css'
@@ -24,4 +26,12 @@ app.use(VueTippy, {
     }
 })
 
-app.mount('#app')
+;(async () => {
+    try {
+        await initDB()
+    } catch (error) {
+        console.error('Failed to initialize IndexedDB:', error)
+    } finally {
+        app.mount('#app')
+    }
+})()
