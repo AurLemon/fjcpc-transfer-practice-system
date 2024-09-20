@@ -9,7 +9,7 @@ interface ProgressData {
     time: string
 }
 
-const dbPromise = openDB('user-db', 1)
+const dbPromise = openDB('user-info', 1)
 
 export async function getUserProgress(): Promise<ProgressData[]> {
     const db = await dbPromise
@@ -21,9 +21,13 @@ export async function setUserProgress(progress: ProgressData[]) {
     await db.put('user_progress', progress, 'progress')
 }
 
-export async function deleteUserProgress() {
+export async function deleteUserProgress(pid: string) {
     const db = await dbPromise
-    await db.delete('user_progress', 'progress')
+    const currentProgress = (await db.get('user_progress', 'progress')) || []
+
+    const updatedProgress = currentProgress.filter((item: { pid: string }) => item.pid !== pid)
+
+    await db.put('user_progress', updatedProgress, 'progress')
 }
 
 export async function checkQuestionExists(pid: string): Promise<boolean> {

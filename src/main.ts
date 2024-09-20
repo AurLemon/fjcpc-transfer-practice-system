@@ -1,4 +1,4 @@
-import { createApp, onMounted } from 'vue'
+import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
 import App from './App.vue'
@@ -26,12 +26,11 @@ app.use(VueTippy, {
     }
 })
 
-;(async () => {
-    try {
-        await initDB()
-    } catch (error) {
-        console.error('Failed to initialize IndexedDB:', error)
-    } finally {
+initDB()
+    .then(() => {
         app.mount('#app')
-    }
-})()
+    })
+    .catch((error) => {
+        console.error('Dexie Error:', error)
+        app.mount('#app')
+    })

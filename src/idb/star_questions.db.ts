@@ -1,107 +1,133 @@
-// src/idb/star_questions.db.ts
-
 import { openDB } from 'idb'
 
+interface StarItem {
+    pid: string
+    course: number
+    subject: number
+    time: string
+}
+
 interface StarProgressData {
-    [folder: string]: string[] // 文件夹名为键，内容为 string[] 的数组
-} 
-
-const dbPromise = openDB('user-db', 1)
-
-// 获取整个 star_progress 对象
-async function getStarProgressObject(): Promise<StarProgressData> {
-    const db = await dbPromise
-    return (await db.get('star_progress', 'data')) || {}
+    folderName: string
+    items: StarItem[]
 }
 
-// 获取所有文件夹名称
+const dbPromise = openDB('user-info', 1)
+
 export async function getStarProgressFolders(): Promise<string[]> {
-    const starProgress = await getStarProgressObject()
-    return Object.keys(starProgress)
+    const db = await dbPromise
+    const tx = db.transaction('star_questions', 'readonly')
+    const store = tx.objectStore('star_questions')
+    const allFolders = await store.getAllKeys()
+    return allFolders as string[]
 }
 
-// 获取指定文件夹的内容，如果不传入文件夹名称，则默认为 'wrong'
 export async function getFolderContent(folderName: string = 'wrong'): Promise<string[]> {
-    const starProgress = await getStarProgressObject()
-    return starProgress[folderName] || []
+    const db = await dbPromise
+    const tx = db.transaction('star_questions', 'readonly')
+    const store = tx.objectStore('star_questions')
+    const folder = await store.get(folderName)
+    return folder ? folder.items : []
 }
 
-// 添加新文件夹，如果不传入文件夹名称，则默认为 'wrong'
 export async function addFolder(folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const starProgress = await getStarProgressObject()
+    const tx = db.transaction('star_questions', 'readwrite')
+    const store = tx.objectStore('star_questions')
 
-    if (folderName in starProgress) {
+    const existingFolder = await store.get(folderName)
+    if (existingFolder) {
         throw new Error('Folder already exists')
     }
 
-    starProgress[folderName] = []
-    await db.put('star_progress', starProgress, 'data')
+    await store.put({ folderName, items: [] })
+    await tx.done
 }
 
-// 删除文件夹，如果不传入文件夹名称，则默认为 'wrong'
 export async function deleteFolder(folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const starProgress = await getStarProgressObject()
+    const tx = db.transaction('star_questions', 'readwrite')
+    const store = tx.objectStore('star_questions')
 
-    if (folderName in starProgress) {
-        delete starProgress[folderName]
-        await db.put('star_progress', starProgress, 'data')
-    } else {
+    const folder = await store.get(folderName)
+    if (!folder) {
         throw new Error('Folder does not exist')
     }
+
+    await store.delete(folderName)
+    await tx.done
 }
 
-// 重命名文件夹，如果不传入文件夹名称，则默认为 'wrong'
 export async function renameFolder(oldName: string = 'wrong', newName: string): Promise<void> {
     const db = await dbPromise
-    const starProgress = await getStarProgressObject()
+    const tx = db.transaction('star_questions', 'readwrite')
+    const store = tx.objectStore('star_questions')
 
-    if (oldName in starProgress && newName && !(newName in starProgress)) {
-        starProgress[newName] = starProgress[oldName]
-        delete starProgress[oldName]
-        await db.put('star_progress', starProgress, 'data')
-    } else {
-        throw new Error('Old folder does not exist, or new name is invalid')
+    const oldFolder = await store.get(oldName)
+    const newFolder = await store.get(newName)
+
+    if (!oldFolder) {
+        throw new Error('Old folder does not exist')
     }
+
+    if (newFolder) {
+        throw new Error('New folder already exists')
+    }
+
+    await store.put({ folderName: newName, items: oldFolder.items })
+    await store.delete(oldName)
+
+    await tx.done
 }
 
-// 添加条目到指定文件夹，默认 'wrong' 文件夹
-export async function addItemToFolder(pid: string, folderName: string = 'wrong'): Promise<void> {
+export async function addItemToFolder(item: StarItem, folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const starProgress = await getStarProgressObject()
+    const tx = db.transaction('star_questions', 'readwrite')
+    const store = tx.objectStore('star_questions')
 
-    if (!starProgress[folderName]) {
-        starProgress[folderName] = []
+    const folder = (await store.get(folderName)) as StarProgressData | undefined
+    if (!folder) {
+        await store.put({ folderName, items: [item] }, folderName)
+    } else {
+        if (!folder.items.some((existingItem: StarItem) => existingItem.pid === item.pid)) {
+            folder.items.push(item)
+            await store.put({ folderName, items: folder.items }, folderName)
+        }
     }
 
-    if (!starProgress[folderName].includes(pid)) {
-        starProgress[folderName].push(pid)
-        await db.put('star_progress', starProgress, 'data')
-    }
+    await tx.done
 }
 
-// 从指定文件夹中删除条目，默认 'wrong' 文件夹
 export async function removeItemFromFolder(pid: string, folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const starProgress = await getStarProgressObject()
+    const tx = db.transaction('star_questions', 'readwrite')
+    const store = tx.objectStore('star_questions')
 
-    if (starProgress[folderName]) {
-        starProgress[folderName] = starProgress[folderName].filter((item) => item !== pid)
-        await db.put('star_progress', starProgress, 'data')
-    } else {
+    const folder = (await store.get(folderName)) as StarProgressData | undefined
+    if (!folder) {
         throw new Error('Folder does not exist')
     }
+
+    folder.items = folder.items.filter((item: StarItem) => item.pid !== pid)
+
+    await store.put({ folderName, items: folder.items }, folderName)
+
+    await tx.done
 }
 
-// 检查某个 pid 是否存在于指定文件夹，默认 'wrong' 文件夹
 export async function checkStarExists(pid: string, folderName: string = 'wrong'): Promise<boolean> {
-    const folderContent = await getFolderContent(folderName)
-    return folderContent.includes(pid)
+    const db = await dbPromise
+    const tx = db.transaction('star_questions', 'readonly')
+    const store = tx.objectStore('star_questions')
+
+    const folder = await store.get(folderName)
+    return folder ? folder.items.some((item: StarItem) => item.pid === pid) : false
 }
 
-// 设置整个 star_progress 对象（用于 fetchUserStar）
 export async function setStarProgress(starData: StarProgressData): Promise<void> {
     const db = await dbPromise
-    await db.put('star_progress', starData, 'data')
+    const tx = db.transaction('star_questions', 'readwrite')
+    const store = tx.objectStore('star_questions')
+    await store.put(starData, starData.folderName)
+    await tx.done
 }

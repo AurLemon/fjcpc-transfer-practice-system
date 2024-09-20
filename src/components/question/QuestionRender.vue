@@ -46,14 +46,40 @@ if (savedSetting !== null) {
     userSetting.value = savedSetting
 }
 
-let isDone = ref<boolean>(false)
-let isMark = ref<boolean>(false)
+const isDone = ref<boolean>(false)
+const isMark = ref<boolean>(false)
 
-const updateDone = () => {
+const updateDone = async () => {
+    if (!currentQuestion.value) {
+        return
+    }
+
+    if (isDone.value) {
+        await userStore.deleteProgress(currentQuestion.value.pid)
+    } else {
+        await userStore.addProgress(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
+    }
+
     isDone.value = !isDone.value
 }
 
-const updateBookmark = () => {
+const updateBookmark = async () => {
+    if (!currentQuestion.value) {
+        return
+    }
+
+    if (isMark.value) {
+        userStore.deleteStar(currentQuestion.value.pid).catch(() => {
+            isMark.value = true
+        })
+    } else {
+        await userStore
+            .addStar(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
+            .catch(() => {
+                isMark.value = false
+            })
+    }
+
     isMark.value = !isMark.value
 }
 
@@ -453,6 +479,20 @@ const handleKeydown = (event: KeyboardEvent) => {
             break
     }
 }
+
+watch(
+    currentQuestion,
+    async (newQuestion) => {
+        if (newQuestion && newQuestion.pid) {
+            isDone.value = await userStore.isProgress(newQuestion.pid)
+            isMark.value = await userStore.isStar(newQuestion.pid)
+        } else {
+            isDone.value = false
+            isMark.value = false
+        }
+    },
+    { immediate: true }
+)
 
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown)

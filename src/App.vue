@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-
 import PageHeader from './components/PageHeader.vue'
 import PageContainer from './components/PageContainer.vue'
 import PageFooter from './components/PageFooter.vue'

@@ -8,6 +8,18 @@ import { setStarProgress, checkStarExists, addItemToFolder, removeItemFromFolder
 import { useAuthStore } from './auth'
 import { useNotifyStore } from '@/stores/notify'
 
+interface StarItem {
+    pid: string
+    course: number
+    subject: number
+    time: string
+}
+
+interface StarProgressData {
+    folderName: string
+    items: StarItem[]
+}
+
 export const useUserStore = defineStore('user', {
     state: () => ({
         login: {
@@ -71,7 +83,6 @@ export const useUserStore = defineStore('user', {
                 if (response.data.code === 200) {
                     const progressData = response.data.data
                     await setUserProgress(progressData)
-                    notifyStore.addMessage('success', '用户进度已成功获取并保存到本地。')
                 } else {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
@@ -79,7 +90,7 @@ export const useUserStore = defineStore('user', {
                     }
                 }
             } catch (err) {
-                notifyStore.addMessage('failed', '获取用户进度时出现异常')
+                notifyStore.addMessage('failed', `获取用户进度时出现异常（${err}）`)
             }
         },
         async isProgress(pid: string): Promise<boolean> {
@@ -95,15 +106,16 @@ export const useUserStore = defineStore('user', {
                 return false
             }
         },
-        async addProgress(pid: string[], course: number, subject: number, type: number) {
+        async addProgress(pid: string, course: number, subject: number, type: number) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
             const token = authStore.readToken()
+            const pidArray = [pid]
 
             try {
                 const response: any = await post(
                     '/user/progress',
-                    { pid: pid },
+                    { pid: pidArray },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -114,18 +126,11 @@ export const useUserStore = defineStore('user', {
                 if (response.data.code === 200) {
                     const currentProgress = await getUserProgress()
 
-                    for (const id of pid) {
-                        if (currentProgress.some((item) => item.pid === id)) {
-                            console.log(`题目 ${id} 已存在于用户进度中`)
-                            continue
-                        }
-
-                        const updatedProgress = [...currentProgress, { pid: id, course, subject, type, time: Date.now().toString() }]
-
+                    if (!currentProgress.some((item) => item.pid === pid)) {
+                        const updatedProgress = [...currentProgress, { pid, course, subject, type, time: Date.now().toString() }]
                         await setUserProgress(updatedProgress)
                     }
 
-                    notifyStore.addMessage('success', '用户进度已成功更新。')
                     return true
                 } else {
                     if (response.data.data.type === 'expiry_token') {
@@ -137,20 +142,23 @@ export const useUserStore = defineStore('user', {
                         return false
                     }
                 }
-            } catch (error) {
-                notifyStore.addMessage('failed', '添加用户进度时服务器异常')
+            } catch (err) {
+                notifyStore.addMessage('failed', `添加用户进度时异常（${err}）`)
                 return false
             }
         },
-        async deleteProgress(pid: string[], type: 'delete') {
+        async deleteProgress(pid: string) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
             const token = authStore.readToken()
 
+            const pidArray = [pid]
+            const type = 'delete'
+
             try {
                 const response: any = await post(
                     '/user/progress',
-                    { pid, type },
+                    { pid: pidArray, type },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -161,24 +169,22 @@ export const useUserStore = defineStore('user', {
                 if (response.data.code === 200) {
                     const currentProgress = await getUserProgress()
 
-                    const updatedProgress = currentProgress.filter((item) => !pid.includes(item.pid))
+                    const updatedProgress = currentProgress.filter((item) => item.pid !== pid)
 
                     await setUserProgress(updatedProgress)
-
-                    notifyStore.addMessage('success', '用户进度已成功删除。')
                     return true
                 } else {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
-                        await this.deleteProgress(pid, type)
+                        await this.deleteProgress(pid)
                     } else if (response.data.data.type === 'token_not_exist') {
                         return false
                     } else {
                         return false
                     }
                 }
-            } catch (error) {
-                notifyStore.addMessage('failed', '删除用户进度时服务器异常')
+            } catch (err) {
+                notifyStore.addMessage('failed', `删除用户进度时服务器异常（${err}）`)
                 return false
             }
         },
@@ -195,8 +201,14 @@ export const useUserStore = defineStore('user', {
                 })
 
                 if (response.data.code === 200) {
-                    const starData = response.data.data
-                    await setStarProgress(starData)
+                    const starItems = response.data.data
+
+                    const starProgressData: StarProgressData = {
+                        folderName: 'wrong',
+                        items: starItems
+                    }
+
+                    await setStarProgress(starProgressData)
                 } else {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
@@ -204,7 +216,8 @@ export const useUserStore = defineStore('user', {
                     }
                 }
             } catch (err) {
-                notifyStore.addMessage('failed', '获取用户星标数据时异常')
+                notifyStore.addMessage('failed', `获取收藏数据时异常（${err}）`)
+                console.log(err)
             }
         },
         async isStar(pid: string): Promise<boolean> {
@@ -215,15 +228,22 @@ export const useUserStore = defineStore('user', {
                 return false
             }
         },
-        async addStar(pid: string[], course: number, subject: number, type: number) {
+        async addStar(pid: string, course: number, subject: number, type: number) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
             const token = authStore.readToken()
 
+            const starItem: StarItem = {
+                pid,
+                course,
+                subject,
+                time: new Date().toISOString()
+            }
+
             try {
                 const response: any = await post(
                     '/user/star',
-                    { pid: pid },
+                    { pid: [pid] },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -232,13 +252,9 @@ export const useUserStore = defineStore('user', {
                 )
 
                 if (response.data.code === 200) {
-                    for (const id of pid) {
-                        const exists = await checkStarExists(id)
-                        if (exists) {
-                            continue
-                        }
-
-                        await addItemToFolder(id)
+                    const exists = await checkStarExists(pid, 'wrong')
+                    if (!exists) {
+                        await addItemToFolder(starItem, 'wrong')
                     }
                     return true
                 } else {
@@ -251,20 +267,23 @@ export const useUserStore = defineStore('user', {
                         return false
                     }
                 }
-            } catch (error) {
-                notifyStore.addMessage('failed', '添加星标时服务器异常')
+            } catch (err) {
+                notifyStore.addMessage('failed', `添加收藏时服务器异常（${err}）`)
                 return false
             }
         },
-        async deleteStar(pid: string[], type: 'delete') {
+        async deleteStar(pid: string) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
             const token = authStore.readToken()
 
+            const pidArray = [pid]
+            const type = 'delete'
+
             try {
                 const response: any = await post(
                     '/user/star',
-                    { pid, type },
+                    { type: type, pid: pidArray },
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -273,22 +292,20 @@ export const useUserStore = defineStore('user', {
                 )
 
                 if (response.data.code === 200) {
-                    for (const id of pid) {
-                        await removeItemFromFolder(id)
-                    }
+                    await removeItemFromFolder(pid, 'wrong')
                     return true
                 } else {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
-                        await this.deleteStar(pid, type)
+                        await this.deleteStar(pid)
                     } else if (response.data.data.type === 'token_not_exist') {
                         return false
                     } else {
                         return false
                     }
                 }
-            } catch (error) {
-                notifyStore.addMessage('failed', '删除星标时服务器异常')
+            } catch (err) {
+                notifyStore.addMessage('failed', `删除收藏时服务器异常（${err}）`)
                 return false
             }
         }
