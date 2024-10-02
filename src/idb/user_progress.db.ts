@@ -1,6 +1,7 @@
 // src/idb/user_progress.db
 
 import { openDB } from 'idb'
+import { initDB } from './idb'
 
 interface ProgressData {
     pid: string
@@ -9,7 +10,10 @@ interface ProgressData {
     time: string
 }
 
-const dbPromise = openDB('user-info', 1)
+const dbPromise = (async () => {
+    await initDB()
+    return openDB('user-info', 1)
+})()
 
 export async function getUserProgress(): Promise<ProgressData[]> {
     const db = await dbPromise

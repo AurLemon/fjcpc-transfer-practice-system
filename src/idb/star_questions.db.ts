@@ -1,4 +1,5 @@
 import { openDB } from 'idb'
+import { initDB } from './idb'
 
 interface StarItem {
     pid: string
@@ -12,11 +13,14 @@ interface StarProgressData {
     items: StarItem[]
 }
 
-const dbPromise = openDB('user-info', 1)
+const dbPromise = (async () => {
+    await initDB()
+    return openDB('user-info', 1)
+})()
 
 export async function getStarProgressFolders(): Promise<string[]> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readonly')
+    const tx = (await db).transaction('star_questions', 'readonly')
     const store = tx.objectStore('star_questions')
     const allFolders = await store.getAllKeys()
     return allFolders as string[]
@@ -24,7 +28,7 @@ export async function getStarProgressFolders(): Promise<string[]> {
 
 export async function getFolderContent(folderName: string = 'wrong'): Promise<string[]> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readonly')
+    const tx = (await db).transaction('star_questions', 'readonly')
     const store = tx.objectStore('star_questions')
     const folder = await store.get(folderName)
     return folder ? folder.items : []
@@ -32,7 +36,7 @@ export async function getFolderContent(folderName: string = 'wrong'): Promise<st
 
 export async function addFolder(folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readwrite')
+    const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
 
     const existingFolder = await store.get(folderName)
@@ -40,13 +44,13 @@ export async function addFolder(folderName: string = 'wrong'): Promise<void> {
         throw new Error('Folder already exists')
     }
 
-    await store.put({ folderName, items: [] })
+    await store.put({ folderName, items: [] }) // 不再需要提供 key 参数
     await tx.done
 }
 
 export async function deleteFolder(folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readwrite')
+    const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
 
     const folder = await store.get(folderName)
@@ -60,7 +64,7 @@ export async function deleteFolder(folderName: string = 'wrong'): Promise<void> 
 
 export async function renameFolder(oldName: string = 'wrong', newName: string): Promise<void> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readwrite')
+    const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
 
     const oldFolder = await store.get(oldName)
@@ -74,7 +78,7 @@ export async function renameFolder(oldName: string = 'wrong', newName: string): 
         throw new Error('New folder already exists')
     }
 
-    await store.put({ folderName: newName, items: oldFolder.items })
+    await store.put({ folderName: newName, items: oldFolder.items }) // 内联键，不需要提供 key 参数
     await store.delete(oldName)
 
     await tx.done
@@ -82,16 +86,16 @@ export async function renameFolder(oldName: string = 'wrong', newName: string): 
 
 export async function addItemToFolder(item: StarItem, folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readwrite')
+    const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
 
     const folder = (await store.get(folderName)) as StarProgressData | undefined
     if (!folder) {
-        await store.put({ folderName, items: [item] }, folderName)
+        await store.put({ folderName, items: [item] }) // 内联键，使用 folderName 作为 key
     } else {
         if (!folder.items.some((existingItem: StarItem) => existingItem.pid === item.pid)) {
             folder.items.push(item)
-            await store.put({ folderName, items: folder.items }, folderName)
+            await store.put({ folderName, items: folder.items }) // 内联键，使用 folderName 作为 key
         }
     }
 
@@ -100,7 +104,7 @@ export async function addItemToFolder(item: StarItem, folderName: string = 'wron
 
 export async function removeItemFromFolder(pid: string, folderName: string = 'wrong'): Promise<void> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readwrite')
+    const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
 
     const folder = (await store.get(folderName)) as StarProgressData | undefined
@@ -110,14 +114,14 @@ export async function removeItemFromFolder(pid: string, folderName: string = 'wr
 
     folder.items = folder.items.filter((item: StarItem) => item.pid !== pid)
 
-    await store.put({ folderName, items: folder.items }, folderName)
+    await store.put({ folderName, items: folder.items }) // 内联键，使用 folderName 作为 key
 
     await tx.done
 }
 
 export async function checkStarExists(pid: string, folderName: string = 'wrong'): Promise<boolean> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readonly')
+    const tx = (await db).transaction('star_questions', 'readonly')
     const store = tx.objectStore('star_questions')
 
     const folder = await store.get(folderName)
@@ -126,8 +130,8 @@ export async function checkStarExists(pid: string, folderName: string = 'wrong')
 
 export async function setStarProgress(starData: StarProgressData): Promise<void> {
     const db = await dbPromise
-    const tx = db.transaction('star_questions', 'readwrite')
+    const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
-    await store.put(starData, starData.folderName)
+    await store.put(starData) // 内联键使用 folderName，不再需要传递第二个参数
     await tx.done
 }
