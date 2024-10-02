@@ -33,6 +33,22 @@ export const useQuestionStore = defineStore('question', {
             } catch (err) {
                 notifyStore.addMessage('failed', '无法获取题库信息，请检查网络连接。')
             }
+        },
+        getCulturalCount(): number {
+            return this.questionInfo.cultural_lesson.reduce(
+                (sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
+                    return sum + lesson.count
+                },
+                0
+            )
+        },
+        getProfessionCount(): number {
+            return this.questionInfo.profession_lesson.reduce(
+                (sum: number, lesson: { subject: number; id: string; name: string; count: number }) => {
+                    return sum + lesson.count
+                },
+                0
+            )
         }
     }
 })

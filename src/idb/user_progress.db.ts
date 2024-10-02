@@ -40,3 +40,9 @@ export async function checkQuestionExists(pid: string): Promise<boolean> {
 
     return progressData.some((item) => item.pid === pid)
 }
+
+export async function getProgressCount(): Promise<number> {
+    const db = await dbPromise
+    const progressData = (await db.get('user_progress', 'progress')) || []
+    return Array.isArray(progressData) ? progressData.length : 0
+}

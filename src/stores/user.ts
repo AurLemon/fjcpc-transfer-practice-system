@@ -3,11 +3,12 @@
 import { defineStore } from 'pinia'
 import { get, post } from '@/api/api'
 
-import { getUserProgress, setUserProgress, checkQuestionExists } from '@/idb/user_progress.db'
+import { getUserProgress, setUserProgress, checkQuestionExists, getProgressCount } from '@/idb/user_progress.db'
 import { setStarProgress, checkStarExists, addItemToFolder, removeItemFromFolder } from '@/idb/star_questions.db'
 
 import { useAuthStore } from './auth'
-import { useNotifyStore } from '@/stores/notify'
+import { useQuestionStore } from './question'
+import { useNotifyStore } from './notify'
 
 interface StarItem {
     pid: string
@@ -34,12 +35,9 @@ export const useUserStore = defineStore('user', {
             last_login: '',
             reg_date: '',
             user_progress: {
-                cultural_course: 0,
-                profession_course: 0
+                current: 0,
+                total: 0
             }
-        },
-        project: {
-            is_indexeddb_compatible: true
         },
         setting: {
             local_storage_questions: true
@@ -73,8 +71,8 @@ export const useUserStore = defineStore('user', {
                 last_login: '',
                 reg_date: '',
                 user_progress: {
-                    cultural_course: 0,
-                    profession_course: 0
+                    current: 0,
+                    total: 0
                 }
             }
         },
@@ -195,6 +193,11 @@ export const useUserStore = defineStore('user', {
                 notifyStore.addMessage('failed', `删除用户进度时服务器异常（${err}）`)
                 return false
             }
+        },
+        async updateProgressCount() {
+            const questionStore = useQuestionStore()
+            this.profile.user_progress.current = await getProgressCount()
+            this.profile.user_progress.total = questionStore.getCulturalCount() + questionStore.getProfessionCount()
         },
         async fetchStarProgress() {
             const authStore = useAuthStore()

@@ -16,6 +16,8 @@ if (userStore.readLogin()) {
     authStore.getUserProfile()
     userStore.fetchUserProgress()
     userStore.fetchStarProgress()
+} else {
+    userStore.updateProgressCount()
 }
 
 questionStore.getQuestionInfo()
