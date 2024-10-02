@@ -32,7 +32,11 @@ export const useUserStore = defineStore('user', {
             school: '',
             profession: '',
             last_login: '',
-            reg_date: ''
+            reg_date: '',
+            user_progress: {
+                cultural_course: 0,
+                profession_course: 0
+            }
         },
         project: {
             is_indexeddb_compatible: true
@@ -67,7 +71,11 @@ export const useUserStore = defineStore('user', {
                 school: '',
                 profession: '',
                 last_login: '',
-                reg_date: ''
+                reg_date: '',
+                user_progress: {
+                    cultural_course: 0,
+                    profession_course: 0
+                }
             }
         },
         async fetchUserProgress() {
@@ -131,7 +139,6 @@ export const useUserStore = defineStore('user', {
                         const updatedProgress = [...currentProgress, { pid, course, subject, type, time: Date.now().toString() }]
                         await setUserProgress(updatedProgress)
                     }
-
                     return true
                 } else {
                     if (response.data.data.type === 'expiry_token') {

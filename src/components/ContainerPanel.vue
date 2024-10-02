@@ -63,6 +63,33 @@ export default defineComponent({
             return dayjs(examDate).diff(dayjs(), 'day')
         }
     },
+    computed: {
+        calculateUserProgress(): number {
+            if (this.userStore.login.isLogged) {
+                const userProgress = this.userStore.profile.user_progress
+
+                if (this.questionStore.questionInfo && this.questionStore.questionInfo.profession_lesson) {
+                    if (userProgress.cultural_course !== null && userProgress.profession_course !== null) {
+                        const current = userProgress.cultural_course + userProgress.profession_course
+
+                        const matchingProfession = this.questionStore.questionInfo.profession_lesson.find((profession) => {
+                            return profession.name === this.userStore.profile.profession
+                        })
+
+                        const userProfessionTotalCount = matchingProfession ? matchingProfession.count : 0
+                        const total = this.getCulturalCount() + userProfessionTotalCount
+                        return total > 0 ? Number(((current / total) * 100).toFixed(2)) : 0
+                    } else {
+                        return 0
+                    }
+                } else {
+                    return 0
+                }
+            } else {
+                return 0
+            }
+        }
+    },
     setup() {
         const cardStore = useCardStore()
         const authStore = useAuthStore()
@@ -105,13 +132,18 @@ export default defineComponent({
             </div>
         </div>
         <div class="container-panel-status">
-            <div class="container-panel-status__label" id="progress-sync-status">
+            <div class="container-panel-status__label">
                 <span class="container-panel-status__color"></span><span class="container-panel-status__text">-</span>
             </div>
-            <div class="container-panel-status__progress" id="backend-status">
-                <div class="container-panel-status__progressLabel">做题进度<span id="student-progress">-</span></div>
+            <div class="container-panel-status__progress" v-if="userStore.profile.user_progress && questionStore.questionInfo.profession_lesson">
+                <div class="container-panel-status__progressLabel">
+                    做题进度
+                    <span>
+                        {{ `${calculateUserProgress}%` }}
+                    </span>
+                </div>
                 <div class="container-panel-status__progressWrapper">
-                    <div class="container-panel-status__progressScroll"></div>
+                    <div class="container-panel-status__progressScroll" :style="{ width: calculateUserProgress + '%' }"></div>
                 </div>
             </div>
         </div>

@@ -85,11 +85,16 @@ button:active {
 }
 
 @font-face {
-    font-family: "JetBrains Mono";
-    src: url('./assets/fonts/JetBrains_Mono.woff2') format('woff2');
+    font-family: "Inter";
+    src: url('../fonts/Inter.woff2') format('woff2');
 }
 
 @font-face {
     font-family: "MiSans Latin";
-    src: url('./assets/fonts/MiSans_Latin.woff2') format('woff2');
+    src: url('../fonts/MiSans_Latin.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url('../fonts/JetBrains_Mono.woff2') format('woff2');
 }
