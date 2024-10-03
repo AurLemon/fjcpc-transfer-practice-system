@@ -1,4 +1,10 @@
-<script lang="ts"></script>
+<script lang="ts">
+import { defineComponent } from 'vue'
+
+export default defineComponent({
+    name: 'StatView'
+})
+</script>
 
 <template>
     <div class="page-container-slide page-stat">

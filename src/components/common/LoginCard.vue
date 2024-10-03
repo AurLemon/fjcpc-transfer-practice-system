@@ -1,13 +1,13 @@
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script lang="ts" setup>
+import { ref, watch } from 'vue'
+import { debounce } from '@/utils/debounce'
 
 import { useAuthStore } from '@/stores/auth'
 import { useCardStore } from '@/stores/card'
 import { useUserStore } from '@/stores/user'
 import { useNotifyStore } from '@/stores/notify'
 
-import { debounce } from '@/utils/debounce'
-import { get, post, getPublicKey } from '@/api/api'
+import { getPublicKey, post } from '@/api/api'
 import { sm2Encrypt } from '@/utils/crypto'
 
 interface Data {
@@ -17,128 +17,117 @@ interface Data {
     loadingInfo: string
 }
 
-export default defineComponent({
-    name: 'LoginCard',
-    data(): Data {
-        return {
-            id_number: '',
-            password: '',
-            loadStatus: 'none',
-            loadingInfo: ''
-        }
-    },
-    methods: {
-        async fetchData() {
-            if (!this.id_number.length > 0 && !this.password.length > 0) {
-                this.loadStatus = 'error'
-                this.loadingInfo = '请输入账号密码'
+const id_number = ref<string>('')
+const password = ref<string>('')
+const loadStatus = ref<string>('none')
+const loadingInfo = ref<string>('')
+
+const authStore = useAuthStore()
+const cardStore = useCardStore()
+const userStore = useUserStore()
+const notifyStore = useNotifyStore()
+
+const fetchData = async () => {
+    if (id_number.value.length === 0 && password.value.length === 0) {
+        loadStatus.value = 'error'
+        loadingInfo.value = '请输入账号密码'
+        return
+    }
+
+    if (id_number.value.length < 18 && password.value.length < 6) {
+        loadStatus.value = 'error'
+        loadingInfo.value = '账号或密码长度不足'
+        return
+    }
+
+    loadStatus.value = 'loading'
+    loadingInfo.value = '正在获取公钥以加密信息…'
+    const publicKey: string | null = await getPublicKey()
+    if (publicKey !== null) {
+        loadingInfo.value = '加密信息中…'
+        const encryptedIdNumber = sm2Encrypt(id_number.value, publicKey)
+        const encryptedPassword = sm2Encrypt(password.value, publicKey)
+
+        try {
+            loadingInfo.value = '请求令牌以验证身份中…'
+            const tokenResponse: any = await post('/auth/login', {
+                id_number: encryptedIdNumber,
+                password: encryptedPassword
+            })
+
+            if (tokenResponse.data.data.type === 'password_incorrect') {
+                loadStatus.value = 'error'
+                loadingInfo.value = `密码错误`
+                userStore.login.isLogged = false
                 return
             }
 
-            if (this.id_number.length < 18 && this.password.length < 6) {
-                this.loadStatus = 'error'
-                this.loadingInfo = '账号或密码长度不足'
+            if (tokenResponse.data.data.type === 'password_illegal') {
+                loadStatus.value = 'error'
+                loadingInfo.value = `密码不合法`
+                userStore.login.isLogged = false
                 return
             }
 
-            this.loadStatus = 'loading'
-            this.loadingInfo = '正在获取公钥以加密信息…'
-            const authStore = useAuthStore()
-            const publicKey: string | null = await getPublicKey()
-            if (publicKey !== null) {
-                this.loadingInfo = '加密信息中…'
-                const encryptedIdNumber = sm2Encrypt(this.id_number, publicKey)
-                const encryptedPassword = sm2Encrypt(this.password, publicKey)
-
-                try {
-                    this.loadingInfo = '请求令牌以验证身份中…'
-                    const tokenResponse: any = await post('/auth/login', {
-                        id_number: encryptedIdNumber,
-                        password: encryptedPassword
-                    })
-
-                    if (tokenResponse.data.data.type === 'password_incorrect') {
-                        this.loadStatus = 'error'
-                        this.loadingInfo = `密码错误`
-                        this.userStore.login.isLogged = false
-                        return
-                    }
-
-                    if (tokenResponse.data.data.type === 'password_illegal') {
-                        this.loadStatus = 'error'
-                        this.loadingInfo = `密码不合法`
-                        this.userStore.login.isLogged = false
-                        return
-                    }
-
-                    if (tokenResponse.data.data.type === 'Unauthorized') {
-                        this.loadStatus = 'error'
-                        this.loadingInfo = `请传入参数`
-                        this.userStore.login.isLogged = false
-                        return
-                    }
-
-                    if (tokenResponse.data.data.type === 'no_detected') {
-                        this.loadStatus = 'error'
-                        this.loadingInfo = `船政系统内不存在你的身份证，等船政加了你再说`
-                        this.userStore.login.isLogged = false
-                        return
-                    }
-
-                    const token = tokenResponse.data.data.tokens.access_token
-                    const refreshToken = tokenResponse.data.data.tokens.refresh_token
-
-                    authStore.setToken(token)
-                    authStore.setRefreshToken(refreshToken)
-
-                    this.loadStatus = 'success'
-                    this.loadingInfo = tokenResponse.data.data.type === 'login' ? '登录成功' : '已自动注册，别把密码忘了宝宝'
-                    this.userStore.login.isLogged = true
-                    this.notifyStore.addMessage('success', '登录成功！')
-                    authStore.getUserProfile()
-                    this.userStore.fetchUserProgress()
-                    this.userStore.fetchStarProgress()
-                    setTimeout(() => {
-                        this.closeLoginCard()
-                    }, 1200)
-                } catch (err) {
-                    this.loadStatus = 'error'
-                    this.loadingInfo = `请求失败（${err}）`
-                    this.userStore.login.isLogged = false
-                }
-            } else {
-                this.loadStatus = 'error'
-                this.loadingInfo = '获取公钥失败，请检查网络连接。'
+            if (tokenResponse.data.data.type === 'Unauthorized') {
+                loadStatus.value = 'error'
+                loadingInfo.value = `请传入参数`
+                userStore.login.isLogged = false
+                return
             }
-        },
-        closeLoginCard() {
-            this.cardStore.showLoginCard = false
-        },
-        keyupFetchData: debounce(function () {
-            this.fetchData()
-        }, 300),
-        resetLoadStatus: debounce(function () {
+
+            if (tokenResponse.data.data.type === 'no_detected') {
+                loadStatus.value = 'error'
+                loadingInfo.value = `船政系统内不存在你的身份证，等船政加了你再说`
+                userStore.login.isLogged = false
+                return
+            }
+
+            const token = tokenResponse.data.data.tokens.access_token
+            const refreshToken = tokenResponse.data.data.tokens.refresh_token
+
+            authStore.setToken(token)
+            authStore.setRefreshToken(refreshToken)
+
+            loadStatus.value = 'success'
+            loadingInfo.value = tokenResponse.data.data.type === 'login' ? '登录成功' : '已自动注册，别把密码忘了宝宝'
+            userStore.login.isLogged = true
+            notifyStore.addMessage('success', '登录成功！')
+            authStore.getUserProfile()
+            userStore.fetchUserProgress()
+            userStore.fetchStarProgress()
             setTimeout(() => {
-                ;(this.loadStatus = 'none'), (this.loadingInfo = '')
-            }, 2000)
-        }, 1000)
-    },
-    watch: {
-        loadStatus(newStatus) {
-            if (newStatus === 'success' || newStatus === 'error') {
-                this.resetLoadStatus()
-            }
+                closeLoginCard()
+            }, 1200)
+        } catch (err) {
+            loadStatus.value = 'error'
+            loadingInfo.value = `请求失败（${err}）`
+            userStore.login.isLogged = false
         }
-    },
-    setup() {
-        const cardStore = useCardStore()
-        const userStore = useUserStore()
-        const notifyStore = useNotifyStore()
-        return {
-            cardStore,
-            userStore,
-            notifyStore
-        }
+    } else {
+        loadStatus.value = 'error'
+        loadingInfo.value = '获取公钥失败，请检查网络连接。'
+    }
+}
+
+const closeLoginCard = () => {
+    cardStore.showLoginCard = false
+}
+
+const keyupFetchData = debounce(() => {
+    fetchData()
+}, 300)
+
+const resetLoadStatus = debounce(() => {
+    setTimeout(() => {
+        loadStatus.value = 'none'
+        loadingInfo.value = ''
+    }, 2000)
+}, 1000)
+
+watch(loadStatus, (newStatus) => {
+    if (newStatus === 'success' || newStatus === 'error') {
+        resetLoadStatus()
     }
 })
 </script>
