@@ -7,12 +7,19 @@ import { verifyIdNumber } from '../api/api';
 import { TokenService } from './token.service';
 import { UserService } from '../user/user.service';
 
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RequestInfo } from '../database/entities/request_info.entity';
+
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly cryptoUtil: CryptoUtil,
     private readonly tokenService: TokenService,
     private readonly userService: UserService,
+
+    @InjectRepository(RequestInfo)
+    private readonly requestInfoRepository: Repository<RequestInfo>,
   ) {}
 
   @Get('login')
@@ -28,7 +35,7 @@ export class AuthController {
     const { id_number, password } = body;
 
     if (!id_number || !password) {
-      return ApiResponseUtil.error(401, 'Unauthorized', '需要传入参数');
+      return ApiResponseUtil.error(401, 'unauthorized', '需要传入参数');
     }
 
     try {
@@ -42,6 +49,7 @@ export class AuthController {
       const existingUser =
         await this.userService.findByIdNumber(decryptedIdNumber);
 
+      // 已注册用户
       if (existingUser) {
         const tokens = await this.tokenService.generateTokens(
           existingUser.uuid,
@@ -64,6 +72,7 @@ export class AuthController {
         });
       }
 
+      // 未注册用户
       const apiResponse = await verifyIdNumber(decryptedIdNumber);
 
       if (apiResponse?.data?.outmap?.err === '身份证错误！') {
@@ -73,12 +82,19 @@ export class AuthController {
       if (apiResponse?.data?.outmap?.err === 'success') {
         const userInfo = apiResponse.data.outmap.xs;
 
+        const requestInfo = await this.requestInfoRepository.findOne({
+          where: { profession_name: userInfo.zy },
+        });
+
+        const mainSubject = requestInfo ? requestInfo.subject : 0;
+
         const newUser = await this.userService.createUser(
           decryptedIdNumber,
           userInfo.xm,
           decryptedPassword,
           userInfo.xx,
           userInfo.zy,
+          mainSubject,
         );
 
         const tokens = await this.tokenService.generateTokens(newUser.uuid);

@@ -19,6 +19,9 @@ export class DoneQuestion {
   @Column('int')
   course: number; // 被做完题目的 course（从 questions 表获取）
 
+  @Column('int')
+  type: number; // 被做完题目的 type（从 questions 表获取）
+
   @Column('bigint')
   done_time: number; // 完成时间（timestamp）
 }

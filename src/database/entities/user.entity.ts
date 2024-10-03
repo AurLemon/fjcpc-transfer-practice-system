@@ -22,6 +22,9 @@ export class User {
   @Column({ type: 'varchar', length: 100 })
   profession: string; // 专业
 
+  @Column({ type: 'int', default: -1 })
+  profession_main_subject: number; // 主要专业（专业在 request_info 表中的 subject 编号）
+
   @Column({ type: 'int', default: 0 })
   permission: number; // 权限
 

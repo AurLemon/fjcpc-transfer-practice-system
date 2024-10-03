@@ -19,6 +19,9 @@ export class StarQuestion {
   @Column('int')
   course: number; // 被收藏题目的 course（从 questions 表获取）
 
+  @Column('int')
+  type: number; // 被做完题目的 type（从 questions 表获取）
+
   @Column('bigint')
   stared_time: number; // 收藏时间（timestamp）
 

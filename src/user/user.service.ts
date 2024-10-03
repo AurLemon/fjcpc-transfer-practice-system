@@ -55,18 +55,16 @@ export class UserService {
     password: string,
     school: string,
     profession: string,
+    main_subject?: number,
   ): Promise<User> {
     const regDate = new Date();
 
-    // 生成随机 key 用于 AES 加密
     const key = this.generateRandomKey();
 
-    // 加密身份证号、姓名和密码（身份证和姓名 AES，密码 SHA256）
     const encryptedIdNumber = `${this.cryptoUtil.aesEncrypt(id_number, key)}$${key}`;
     const encryptedName = `${this.cryptoUtil.aesEncrypt(name, key)}$${key}`;
     const encryptedPassword = this.cryptoUtil.hashEncrypt(password);
 
-    // 创建新用户实例
     const newUser = this.userRepository.create({
       uuid: crypto.randomUUID(),
       id_number: encryptedIdNumber,
@@ -75,11 +73,11 @@ export class UserService {
       school,
       profession,
       permission: 0,
+      profession_main_subject: main_subject ?? -1,
       last_login: new Date(),
       reg_date: regDate,
     });
 
-    // 保存用户到数据库
     return this.userRepository.save(newUser);
   }
 

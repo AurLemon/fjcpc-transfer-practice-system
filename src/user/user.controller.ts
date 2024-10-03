@@ -6,10 +6,11 @@ import { TokenService } from '../auth/token.service';
 import { TokenGuard } from '../auth/token.guard';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { DoneQuestion } from '../database/entities/done_question.entity';
 import { StarQuestion } from '../database/entities/star_question.entity';
 import { Question } from '../database/entities/question.entity';
+import { RequestInfo } from '../database/entities/request_info.entity';
 
 @Controller('user')
 export class UserController {
@@ -21,6 +22,8 @@ export class UserController {
     private readonly starQuestionRepository: Repository<StarQuestion>,
     @InjectRepository(Question)
     private readonly questionRepository: Repository<Question>,
+    @InjectRepository(RequestInfo)
+    private readonly requestInfoRepository: Repository<RequestInfo>,
   ) {}
 
   @UseGuards(TokenGuard)
@@ -49,7 +52,45 @@ export class UserController {
       reg_date: modifiedRegDate,
     };
 
-    return ApiResponseUtil.success(200, modifiedUserInfo);
+    const culturalCourseCount = await this.doneQuestionRepository.count({
+      where: {
+        user: userInfo.uuid,
+        course: 1,
+      },
+    });
+
+    let professionCourseCount = 0;
+
+    professionCourseCount = await this.doneQuestionRepository.count({
+      where: {
+        user: userInfo.uuid,
+        course: 2,
+        subject: userInfo.profession_main_subject,
+      },
+    });
+
+    const culturalTotal = await this.questionRepository.count({
+      where: {
+        course: 1,
+      },
+    });
+
+    const professionTotal = await this.questionRepository.count({
+      where: {
+        course: 2,
+        subject: userInfo.profession_main_subject,
+      },
+    });
+
+    const userProgress = {
+      current: culturalCourseCount + professionCourseCount,
+      total: culturalTotal + professionTotal,
+    };
+
+    return ApiResponseUtil.success(200, {
+      ...modifiedUserInfo,
+      user_progress: userProgress,
+    });
   }
 
   @UseGuards(TokenGuard)
@@ -70,6 +111,7 @@ export class UserController {
       pid: question.pid,
       course: question.course,
       subject: question.subject,
+      type: question.type,
       time: question.done_time,
     }));
 
@@ -78,17 +120,39 @@ export class UserController {
 
   @UseGuards(TokenGuard)
   @Post('progress')
-  async saveProgress(@Req() req: Request, @Body() body: { pid: string[] }) {
+  async saveProgress(
+    @Req() req: Request,
+    @Body() body: { pid: string[]; type?: string },
+  ) {
     const userInfo: any = req.user;
     const userUuid = userInfo.uuid;
-    const { pid } = body;
+    const { pid, type } = body;
 
     if (!pid.length) {
       return ApiResponseUtil.success(200, []);
     }
 
+    const existingDoneQuestions = await this.doneQuestionRepository.find({
+      where: { user: userUuid, pid: In(pid) },
+    });
+
+    const existingPids = existingDoneQuestions.map((question) => question.pid);
+
+    if (type === 'delete') {
+      await this.doneQuestionRepository.delete({
+        user: userUuid,
+        pid: In(pid),
+      });
+
+      return ApiResponseUtil.success(200, 'Progress deleted successfully');
+    }
+
+    const newPids = pid.filter(
+      (pidNumber) => !existingPids.includes(pidNumber),
+    );
+
     await Promise.all(
-      pid.map(async (pidNumber) => {
+      newPids.map(async (pidNumber) => {
         const question = await this.questionRepository.findOne({
           where: { pid: pidNumber },
         });
@@ -99,6 +163,7 @@ export class UserController {
             pid: question.pid,
             course: question.course,
             subject: question.subject,
+            type: question.type,
             done_time: Date.now(),
           });
         }
@@ -126,6 +191,7 @@ export class UserController {
       pid: question.pid,
       course: question.course,
       subject: question.subject,
+      type: question.type,
       time: question.stared_time,
     }));
 
@@ -134,29 +200,57 @@ export class UserController {
 
   @UseGuards(TokenGuard)
   @Post('star')
-  async saveStar(@Req() req: Request, @Body() body: { pid: string[] }) {
+  async saveStar(
+    @Req() req: Request,
+    @Body() body: { pid: string[]; type?: string },
+  ) {
     const userInfo: any = req.user;
     const userUuid = userInfo.uuid;
-    const { pid } = body;
+    const { pid, type } = body;
 
     if (!pid.length) {
       return ApiResponseUtil.success(200, []);
     }
 
-    const questions = await this.questionRepository.find({
-      where: pid.map((pidNumber) => ({ pid: pidNumber })),
+    const existingStarQuestions = await this.starQuestionRepository.find({
+      where: { user: userUuid, pid: In(pid) },
     });
 
+    const existingPids = existingStarQuestions.map((question) => question.pid);
+
+    if (type === 'delete') {
+      await this.starQuestionRepository.delete({
+        user: userUuid,
+        pid: In(pid),
+      });
+
+      return ApiResponseUtil.success(
+        200,
+        'Starred questions deleted successfully',
+      );
+    }
+
+    const newPids = pid.filter(
+      (pidNumber) => !existingPids.includes(pidNumber),
+    );
+
     await Promise.all(
-      questions.map(async (question) => {
-        await this.starQuestionRepository.save({
-          user: userUuid,
-          pid: question.pid,
-          course: question.course,
-          subject: question.subject,
-          stared_time: Date.now(),
-          folder: 'wrong',
+      newPids.map(async (pidNumber) => {
+        const question = await this.questionRepository.findOne({
+          where: { pid: pidNumber },
         });
+
+        if (question) {
+          await this.starQuestionRepository.save({
+            user: userUuid,
+            pid: question.pid,
+            course: question.course,
+            subject: question.subject,
+            type: question.type,
+            stared_time: Date.now(),
+            folder: 'wrong',
+          });
+        }
       }),
     );
 

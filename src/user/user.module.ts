@@ -11,11 +11,18 @@ import { CryptoModule } from '../common/crypto.module';
 import { DoneQuestion } from '../database/entities/done_question.entity';
 import { StarQuestion } from '../database/entities/star_question.entity';
 import { Question } from '../database/entities/question.entity';
+import { RequestInfo } from '../database/entities/request_info.entity';
 import { User } from '../database/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Question, DoneQuestion, StarQuestion]),
+    TypeOrmModule.forFeature([
+      User,
+      Question,
+      DoneQuestion,
+      StarQuestion,
+      RequestInfo,
+    ]),
     forwardRef(() => TokenModule),
     CryptoModule,
   ],
