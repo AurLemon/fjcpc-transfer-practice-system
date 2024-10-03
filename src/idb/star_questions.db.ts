@@ -44,7 +44,7 @@ export async function addFolder(folderName: string = 'wrong'): Promise<void> {
         throw new Error('Folder already exists')
     }
 
-    await store.put({ folderName, items: [] }) // 不再需要提供 key 参数
+    await store.put({ folderName, items: [] })
     await tx.done
 }
 
@@ -78,7 +78,7 @@ export async function renameFolder(oldName: string = 'wrong', newName: string): 
         throw new Error('New folder already exists')
     }
 
-    await store.put({ folderName: newName, items: oldFolder.items }) // 内联键，不需要提供 key 参数
+    await store.put({ folderName: newName, items: oldFolder.items })
     await store.delete(oldName)
 
     await tx.done
@@ -91,11 +91,11 @@ export async function addItemToFolder(item: StarItem, folderName: string = 'wron
 
     const folder = (await store.get(folderName)) as StarProgressData | undefined
     if (!folder) {
-        await store.put({ folderName, items: [item] }) // 内联键，使用 folderName 作为 key
+        await store.put({ folderName, items: [item] })
     } else {
         if (!folder.items.some((existingItem: StarItem) => existingItem.pid === item.pid)) {
             folder.items.push(item)
-            await store.put({ folderName, items: folder.items }) // 内联键，使用 folderName 作为 key
+            await store.put({ folderName, items: folder.items })
         }
     }
 
@@ -114,7 +114,7 @@ export async function removeItemFromFolder(pid: string, folderName: string = 'wr
 
     folder.items = folder.items.filter((item: StarItem) => item.pid !== pid)
 
-    await store.put({ folderName, items: folder.items }) // 内联键，使用 folderName 作为 key
+    await store.put({ folderName, items: folder.items })
 
     await tx.done
 }
@@ -132,6 +132,6 @@ export async function setStarProgress(starData: StarProgressData): Promise<void>
     const db = await dbPromise
     const tx = (await db).transaction('star_questions', 'readwrite')
     const store = tx.objectStore('star_questions')
-    await store.put(starData) // 内联键使用 folderName，不再需要传递第二个参数
+    await store.put(starData)
     await tx.done
 }

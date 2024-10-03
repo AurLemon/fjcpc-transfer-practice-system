@@ -66,7 +66,7 @@ export default defineComponent({
     computed: {
         calculateUserProgress(): number {
             const userProgress = this.userStore.profile.user_progress
-            return Number(((userProgress.current / userProgress.total) * 100).toFixed(3))
+            return Number(((userProgress.current / userProgress.total) * 100).toFixed(2))
         }
     },
     setup() {
@@ -114,11 +114,11 @@ export default defineComponent({
             <!-- <div class="container-panel-status__label">
                 <span class="container-panel-status__color"></span><span class="container-panel-status__text">-</span>
             </div> -->
-            <div class="container-panel-status__progress" v-if="userStore.profile.user_progress && questionStore.questionInfo.profession_lesson">
+            <div class="container-panel-status__progress" v-if="questionStore.questionInfo.cultural_lesson && questionStore.questionInfo.profession_lesson">
                 <div class="container-panel-status__progressLabel">
                     做题进度
                     <span>
-                        {{ `${calculateUserProgress}%` }}
+                        {{ `${calculateUserProgress}% (${userStore.profile.user_progress.current} / ${userStore.profile.user_progress.total})` }}
                     </span>
                 </div>
                 <div class="container-panel-status__progressWrapper">

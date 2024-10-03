@@ -390,37 +390,37 @@ const renderAnswerNumber = (
     type: number,
     answer: string[] | string[][],
     options: { id: number; xx?: string; txt: string }[],
-    subOptions?: { list: { id: number; xx: string }[] }[]
+    subOptions?: Option[] | null
 ) => {
     if (type === 2) {
         return (answer as string[])
             .map((a) => {
-                const option = options.find((opt) => opt.id.toString() === a)
+                const option = options.find((opt) => opt.id.toString() === a);
                 if (option) {
-                    return option.txt === '对' ? 'T' : 'F'
+                    return option.txt === '对' ? 'T' : 'F';
                 }
-                return ''
+                return '';
             })
-            .join('')
+            .join('');
     }
 
     if (Array.isArray(answer[0])) {
         return (answer as string[][])
             .map((subAnswer, index) => {
-                const subOptionList = subOptions?.[index]?.list || []
+                const currentSubOptions = subOptions && subOptions[index] ? subOptions[index].list || [] : [];
                 return subAnswer
                     .map((a) => {
-                        const option = subOptionList.find((opt) => opt.id.toString() === a)
-                        return option?.xx || ''
+                        const option = currentSubOptions.find((opt) => opt.id.toString() === a);
+                        return option?.xx || '';
                     })
-                    .join('')
+                    .join('');
             })
-            .join('-')
+            .join('-');
     } else {
         return (answer as string[])
             .map((a) => options.find((opt) => opt.id.toString() === a)?.xx || '')
             .sort()
-            .join('')
+            .join('');
     }
 }
 
@@ -429,6 +429,16 @@ const isAnswerCorrect = ref<boolean>(false)
 const checkAnswer = () => {
     showAnswer.value = true
     isAnswerCorrect.value = checkAnswerCorrect() ? true : false
+
+    // 没做过这题、设置开启自动保存进度
+    if (!isDone.value && userStore.setting.auto_save_progress) {
+        updateDone()
+    }
+
+    // 没被收藏过、做错了、设置开启自动收藏错题
+    if (!isMark.value && !isAnswerCorrect.value && userStore.setting.auto_star_question) {
+        updateBookmark()
+    }
 }
 
 const lastUserSetting = ref<UserSetting>({
@@ -555,9 +565,13 @@ getQuestions()
                         :key="option.id"
                         @click="addChoice(option.id)"
                         :class="{
-                            selected: userChoice.includes(option.id.toString()),
+                            selected: Array.isArray(userChoice) && userChoice.flat().includes(option.id.toString()),
                             answer: showAnswer && currentQuestion.answer.includes(option.id.toString()),
-                            error: showAnswer && !currentQuestion.answer.includes(option.id.toString()) && userChoice.includes(option.id.toString())
+                            error:
+                                showAnswer &&
+                                !currentQuestion.answer.includes(option.id.toString()) &&
+                                Array.isArray(userChoice) &&
+                                userChoice.flat().includes(option.id.toString())
                         }"
                     >
                         <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
@@ -573,7 +587,6 @@ getQuestions()
                             :key="option.id"
                             @click="addChoice(option.id, 'sub_options', index + 1)"
                             :class="{
-                                // 如果 userChoice 是 string[][] 结构，检查子选项是否包含当前选项
                                 selected: Array.isArray(userChoice[index]) && userChoice[index].includes(option.id.toString()),
                                 answer: showAnswer && currentQuestion.answer[index].includes(option.id.toString()),
                                 error:

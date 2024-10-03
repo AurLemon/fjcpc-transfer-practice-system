@@ -40,7 +40,9 @@ export const useUserStore = defineStore('user', {
             }
         },
         setting: {
-            local_storage_questions: true
+            local_storage_questions: true,
+            auto_save_progress: true,
+            auto_star_question: true
         }
     }),
     actions: {
@@ -63,18 +65,12 @@ export const useUserStore = defineStore('user', {
             this.resetProfile()
         },
         resetProfile() {
-            this.profile = {
-                name: '',
-                id_number: '',
-                school: '',
-                profession: '',
-                last_login: '',
-                reg_date: '',
-                user_progress: {
-                    current: 0,
-                    total: 0
-                }
-            }
+            this.profile.name = ''
+            this.profile.id_number = ''
+            this.profile.school = ''
+            this.profile.profession = ''
+            this.profile.last_login = ''
+            this.profile.reg_date = ''
         },
         async fetchUserProgress() {
             const authStore = useAuthStore()
@@ -116,82 +112,105 @@ export const useUserStore = defineStore('user', {
         async addProgress(pid: string, course: number, subject: number, type: number) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
+            const userStore = useUserStore()
             const token = authStore.readToken()
             const pidArray = [pid]
+            this.profile.user_progress.current++
 
-            try {
-                const response: any = await post(
-                    '/user/progress',
-                    { pid: pidArray },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
+            if (userStore.readLogin()) {
+                try {
+                    const response: any = await post(
+                        '/user/progress',
+                        { pid: pidArray },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    )
+
+                    if (response.data.code === 200) {
+                        const currentProgress = await getUserProgress()
+
+                        if (!currentProgress.some((item) => item.pid === pid)) {
+                            const updatedProgress = [...currentProgress, { pid, course, subject, type, time: Date.now().toString() }]
+                            await setUserProgress(updatedProgress)
+                        }
+                        return true
+                    } else {
+                        if (response.data.data.type === 'expiry_token') {
+                            await authStore.refreshTokenAndRetry()
+                            await this.addProgress(pid, course, subject, type)
+                        } else if (response.data.data.type === 'token_not_exist') {
+                            return false
+                        } else {
+                            return false
                         }
                     }
-                )
-
-                if (response.data.code === 200) {
-                    const currentProgress = await getUserProgress()
-
-                    if (!currentProgress.some((item) => item.pid === pid)) {
-                        const updatedProgress = [...currentProgress, { pid, course, subject, type, time: Date.now().toString() }]
-                        await setUserProgress(updatedProgress)
-                    }
-                    return true
-                } else {
-                    if (response.data.data.type === 'expiry_token') {
-                        await authStore.refreshTokenAndRetry()
-                        await this.addProgress(pid, course, subject, type)
-                    } else if (response.data.data.type === 'token_not_exist') {
-                        return false
-                    } else {
-                        return false
-                    }
+                } catch (err) {
+                    notifyStore.addMessage('failed', `添加用户进度时异常（${err}）`)
+                    return false
                 }
-            } catch (err) {
-                notifyStore.addMessage('failed', `添加用户进度时异常（${err}）`)
-                return false
+            } else {
+                const currentProgress = await getUserProgress()
+
+                if (!currentProgress.some((item) => item.pid === pid)) {
+                    const updatedProgress = [...currentProgress, { pid, course, subject, type, time: Date.now().toString() }]
+                    await setUserProgress(updatedProgress)
+                }
+                return true
             }
         },
         async deleteProgress(pid: string) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
+            const userStore = useUserStore()
             const token = authStore.readToken()
 
             const pidArray = [pid]
             const type = 'delete'
+            this.profile.user_progress.current--
 
-            try {
-                const response: any = await post(
-                    '/user/progress',
-                    { pid: pidArray, type },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
+            if (userStore.readLogin()) {
+                try {
+                    const response: any = await post(
+                        '/user/progress',
+                        { pid: pidArray, type },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    )
+
+                    if (response.data.code === 200) {
+                        const currentProgress = await getUserProgress()
+
+                        const updatedProgress = currentProgress.filter((item) => item.pid !== pid)
+
+                        await setUserProgress(updatedProgress)
+                        return true
+                    } else {
+                        if (response.data.data.type === 'expiry_token') {
+                            await authStore.refreshTokenAndRetry()
+                            await this.deleteProgress(pid)
+                        } else if (response.data.data.type === 'token_not_exist') {
+                            return false
+                        } else {
+                            return false
                         }
                     }
-                )
-
-                if (response.data.code === 200) {
-                    const currentProgress = await getUserProgress()
-
-                    const updatedProgress = currentProgress.filter((item) => item.pid !== pid)
-
-                    await setUserProgress(updatedProgress)
-                    return true
-                } else {
-                    if (response.data.data.type === 'expiry_token') {
-                        await authStore.refreshTokenAndRetry()
-                        await this.deleteProgress(pid)
-                    } else if (response.data.data.type === 'token_not_exist') {
-                        return false
-                    } else {
-                        return false
-                    }
+                } catch (err) {
+                    notifyStore.addMessage('failed', `删除用户进度时服务器异常（${err}）`)
+                    return false
                 }
-            } catch (err) {
-                notifyStore.addMessage('failed', `删除用户进度时服务器异常（${err}）`)
-                return false
+            } else {
+                const currentProgress = await getUserProgress()
+
+                const updatedProgress = currentProgress.filter((item) => item.pid !== pid)
+
+                await setUserProgress(updatedProgress)
+                return true
             }
         },
         async updateProgressCount() {
@@ -242,6 +261,7 @@ export const useUserStore = defineStore('user', {
         async addStar(pid: string, course: number, subject: number, type: number) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
+            const userStore = useUserStore()
             const token = authStore.readToken()
 
             const starItem: StarItem = {
@@ -251,73 +271,87 @@ export const useUserStore = defineStore('user', {
                 time: new Date().toISOString()
             }
 
-            try {
-                const response: any = await post(
-                    '/user/star',
-                    { pid: [pid] },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
+            if (userStore.readLogin()) {
+                try {
+                    const response: any = await post(
+                        '/user/star',
+                        { pid: [pid] },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    )
+
+                    if (response.data.code === 200) {
+                        const exists = await checkStarExists(pid, 'wrong')
+                        if (!exists) {
+                            await addItemToFolder(starItem, 'wrong')
+                        }
+                        return true
+                    } else {
+                        if (response.data.data.type === 'expiry_token') {
+                            await authStore.refreshTokenAndRetry()
+                            await this.addStar(pid, course, subject, type)
+                        } else if (response.data.data.type === 'token_not_exist') {
+                            return false
+                        } else {
+                            return false
                         }
                     }
-                )
-
-                if (response.data.code === 200) {
-                    const exists = await checkStarExists(pid, 'wrong')
-                    if (!exists) {
-                        await addItemToFolder(starItem, 'wrong')
-                    }
-                    return true
-                } else {
-                    if (response.data.data.type === 'expiry_token') {
-                        await authStore.refreshTokenAndRetry()
-                        await this.addStar(pid, course, subject, type)
-                    } else if (response.data.data.type === 'token_not_exist') {
-                        return false
-                    } else {
-                        return false
-                    }
+                } catch (err) {
+                    notifyStore.addMessage('failed', `添加收藏时服务器异常（${err}）`)
+                    return false
                 }
-            } catch (err) {
-                notifyStore.addMessage('failed', `添加收藏时服务器异常（${err}）`)
-                return false
+            } else {
+                const exists = await checkStarExists(pid, 'wrong')
+                if (!exists) {
+                    await addItemToFolder(starItem, 'wrong')
+                }
+                return true
             }
         },
         async deleteStar(pid: string) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
+            const userStore = useUserStore()
             const token = authStore.readToken()
 
             const pidArray = [pid]
             const type = 'delete'
 
-            try {
-                const response: any = await post(
-                    '/user/star',
-                    { type: type, pid: pidArray },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
+            if (userStore.readLogin()) {
+                try {
+                    const response: any = await post(
+                        '/user/star',
+                        { type: type, pid: pidArray },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    )
+
+                    if (response.data.code === 200) {
+                        await removeItemFromFolder(pid, 'wrong')
+                        return true
+                    } else {
+                        if (response.data.data.type === 'expiry_token') {
+                            await authStore.refreshTokenAndRetry()
+                            await this.deleteStar(pid)
+                        } else if (response.data.data.type === 'token_not_exist') {
+                            return false
+                        } else {
+                            return false
                         }
                     }
-                )
-
-                if (response.data.code === 200) {
-                    await removeItemFromFolder(pid, 'wrong')
-                    return true
-                } else {
-                    if (response.data.data.type === 'expiry_token') {
-                        await authStore.refreshTokenAndRetry()
-                        await this.deleteStar(pid)
-                    } else if (response.data.data.type === 'token_not_exist') {
-                        return false
-                    } else {
-                        return false
-                    }
+                } catch (err) {
+                    notifyStore.addMessage('failed', `删除收藏时服务器异常（${err}）`)
+                    return false
                 }
-            } catch (err) {
-                notifyStore.addMessage('failed', `删除收藏时服务器异常（${err}）`)
-                return false
+            } else {
+                await removeItemFromFolder(pid, 'wrong')
+                return true
             }
         }
     }
