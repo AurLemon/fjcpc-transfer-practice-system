@@ -1,7 +1,7 @@
 // src/stores/question.ts
 
 import { defineStore } from 'pinia'
-import { get, post } from '@/api/api'
+import { get } from '@/api/api'
 import { useNotifyStore } from '@/stores/notify'
 
 interface Lesson {
@@ -14,13 +14,21 @@ interface Lesson {
 interface QuestionInfo {
     cultural_lesson: Lesson[]
     profession_lesson: Lesson[]
+    exam_info: {
+        exam_time: string
+        exam_trust: boolean
+    }
 }
 
 export const useQuestionStore = defineStore('question', {
     state: () => ({
         questionInfo: {
             cultural_lesson: [],
-            profession_lesson: []
+            profession_lesson: [],
+            exam_info: {
+                exam_time: '',
+                exam_trust: false
+            }
         } as QuestionInfo,
         currentStat: {} as any,
         isGetQuestionInfo: true

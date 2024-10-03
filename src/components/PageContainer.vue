@@ -68,7 +68,13 @@ import PageViewContainer from './PageViewContainer.vue'
         border: 1px solid var(--border-color-base);
         border-radius: 10px;
         background: var(--color-surface-0);
+        box-shadow: var(--box-shadow-diverge);
+        transition: box-shadow 200ms ease;
         position: relative;
+
+        &:hover {
+            box-shadow: var(--box-shadow-diverge--hover);
+        }
 
         .page-container-main-tools {
             display: flex;

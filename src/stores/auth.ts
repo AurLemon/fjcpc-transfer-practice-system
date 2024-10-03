@@ -7,7 +7,8 @@ export const useAuthStore = defineStore('auth', {
     state: () => ({
         isLoading: false,
         token: localStorage.getItem('token') || '',
-        refreshToken: localStorage.getItem('refresh_token') || ''
+        refreshToken: localStorage.getItem('refresh_token') || '',
+        isTokenRefreshing: false
     }),
     actions: {
         setToken(token: string) {
@@ -64,7 +65,13 @@ export const useAuthStore = defineStore('auth', {
             }
         },
         async refreshTokenAndRetry() {
+            if (this.isTokenRefreshing) {
+                console.log('请求正在进行，忽略重复调用')
+                return
+            }
+
             this.isLoading = true
+            this.isTokenRefreshing = true
             const notifyStore = useNotifyStore()
 
             const refreshToken = this.readRefreshToken()
@@ -85,11 +92,14 @@ export const useAuthStore = defineStore('auth', {
                     this.deleteToken()
                     this.deleteRefreshToken()
                     notifyStore.addMessage('failed', '刷新 token 失败，请重新登录。')
-                    this.isLoading = false
                 }
             } catch (err) {
                 notifyStore.addMessage('failed', '无法刷新 token，请重新登录。')
+            } finally {
                 this.isLoading = false
+                setTimeout(() => {
+                    this.isTokenRefreshing = false
+                }, 1500)
             }
         }
     }

@@ -58,8 +58,16 @@ export default defineComponent({
                 0
             )
         },
+        examTime(): string {
+            const questionStore = useQuestionStore()
+            return questionStore.questionInfo.exam_info.exam_time || '2025-05-15'
+        },
+        isExamTimeTrust() {
+            const questionStore = useQuestionStore()
+            return !questionStore.questionInfo.exam_info.exam_trust || false
+        },
         examCountdown(): number {
-            const examDate = '2025-05-15'
+            const examDate = this.examTime()
             return dayjs(examDate).diff(dayjs(), 'day')
         }
     },
@@ -104,10 +112,16 @@ export default defineComponent({
                 <div class="container-panel-header-countdown__label">题目总数</div>
             </div>
             <div class="container-panel-header-countdown">
-                <div class="container-panel-header-countdown__value">
+                <div
+                    class="container-panel-header-countdown__value"
+                    v-tippy="{ content: `${examTime()}（${isExamTimeTrust() ? '推算' : '已确定考试时间'}）`, placement: 'left' }"
+                >
                     {{ examCountdown() }}
                 </div>
-                <div class="container-panel-header-countdown__label">离转轨考还有几天</div>
+                <div class="container-panel-header-countdown__label">
+                    离转轨考还有几天
+                    <span class="material-icons" v-if="isExamTimeTrust()" v-tippy="{ content: '考试时间为推算，船政公布考试时间后会自动更新。' }">info</span>
+                </div>
             </div>
         </div>
         <div class="container-panel-status">
@@ -180,7 +194,13 @@ export default defineComponent({
         border: 1px solid var(--border-color-base);
         border-radius: 10px;
         background: var(--color-surface-0);
+        box-shadow: var(--box-shadow-diverge);
+        transition: box-shadow 200ms ease;
         overflow-y: auto;
+
+        &:hover {
+            box-shadow: var(--box-shadow-diverge--hover);
+        }
 
         .container-panel-profile {
             margin-top: 30px;
@@ -330,14 +350,23 @@ export default defineComponent({
                 padding: 2px 6px;
 
                 .container-panel-header-countdown__value {
+                    width: fit-content;
                     font-size: 42px;
                 }
 
                 .container-panel-header-countdown__label {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
                     color: var(--color-base--subtle);
                     font-size: 14px;
                     letter-spacing: 0.75px;
                     line-height: 1;
+
+                    .material-icons {
+                        color: var(--color-surface-4);
+                        font-size: 16px;
+                    }
                 }
             }
         }

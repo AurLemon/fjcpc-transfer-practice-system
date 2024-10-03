@@ -90,6 +90,8 @@ export const useUserStore = defineStore('user', {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
                         this.fetchUserProgress()
+                    } else if (response.data.data.type === 'token_not_exist') {
+                        this.login.isLogged = false
                     }
                 }
             } catch (err) {
@@ -243,6 +245,8 @@ export const useUserStore = defineStore('user', {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
                         await this.fetchStarProgress()
+                    } else if (response.data.data.type === 'token_not_exist') {
+                        this.login.isLogged = false
                     }
                 }
             } catch (err) {

@@ -16,12 +16,11 @@ if (userStore.readLogin()) {
     authStore.getUserProfile()
     userStore.fetchUserProgress()
     userStore.fetchStarProgress()
-    questionStore.getQuestionInfo()
-} else {
-    questionStore.getQuestionInfo(async () => {
-        userStore.updateProgressCount()
-    })
 }
+
+questionStore.getQuestionInfo(async () => {
+    userStore.updateProgressCount()
+})
 </script>
 
 <template>

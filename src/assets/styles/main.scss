@@ -26,6 +26,9 @@
     --border-color-base--darker: rgba(0, 0, 0, 0.08);
     --border-color-input: rgba(0, 0, 0, 0.05);
     --border-color-input--hover: rgba(0, 0, 0, 0.4);
+    --box-shadow-diverge: 0 10px 20px var(--border-color-base--lighter);
+    --box-shadow-diverge--hover: 0 10px 20px hsla(var(--color-primary__h), var(--color-primary__s), var(--color-primary__l), 0.05);
+    ;
     --gap-value: 0.625rem;
     --transition-hover: 150ms cubic-bezier(0.215, 0.61, 0.355, 1);
     --font-family-base: "Inter", "MiSans Latin", "Helvetica Neue", "Helvetica", "Roboto", "BlinkMacSystemFont", "MiSans", "HarmonyOS Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
@@ -50,7 +53,7 @@ body {
     color: var(--color-base);
     font-family: var(--font-family-base);
     accent-color: var(--color-primary);
-    background: var(--color-surface-2);
+    background: linear-gradient(135deg, var(--color-surface-0) -15%, var(--color-surface-2) 30%);
 }
 
 input,
@@ -87,11 +90,6 @@ button:active {
 @font-face {
     font-family: "Inter";
     src: url('../fonts/Inter.woff2') format('woff2');
-}
-
-@font-face {
-    font-family: "MiSans Latin";
-    src: url('../fonts/MiSans_Latin.woff2') format('woff2');
 }
 
 @font-face {
