@@ -27,7 +27,7 @@
     --border-color-input: rgba(0, 0, 0, 0.05);
     --border-color-input--hover: rgba(0, 0, 0, 0.4);
     --box-shadow-diverge: 0 10px 20px var(--border-color-base--lighter);
-    --box-shadow-diverge--hover: 0 10px 20px hsla(var(--color-primary__h), var(--color-primary__s), var(--color-primary__l), 0.05);
+    --box-shadow-diverge--hover: 0 0 48px hsla(var(--color-primary__h), var(--color-primary__s), var(--color-primary__l), 0.05);
     ;
     --gap-value: 0.625rem;
     --transition-hover: 150ms cubic-bezier(0.215, 0.61, 0.355, 1);

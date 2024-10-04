@@ -131,7 +131,7 @@ export default defineComponent({
             <div class="container-panel-status__progress" v-if="questionStore.questionInfo.cultural_lesson && questionStore.questionInfo.profession_lesson">
                 <div class="container-panel-status__progressLabel">
                     做题进度
-                    <span>
+                    <span class="value">
                         {{ `${calculateUserProgress}% (${userStore.profile.user_progress.current} / ${userStore.profile.user_progress.total})` }}
                     </span>
                 </div>
@@ -220,7 +220,7 @@ export default defineComponent({
             }
 
             .container-panel-profile__idnumber {
-                max-width: calc(100% - 32px);
+                max-width: calc(100% - 64px);
                 height: 26px;
                 padding: 4px 2px;
                 font-size: 14px;
@@ -388,18 +388,6 @@ export default defineComponent({
                 }
             }
 
-            #recent-operate-count {
-                .container-panel-status__label .container-panel-status__color {
-                    background: var(--color-primary);
-                }
-
-                .container-panel-status__label .container-panel-status__emphasized {
-                    color: var(--color-base);
-                    font-weight: 600;
-                    margin: 0 3px;
-                }
-            }
-
             .container-panel-status__progress {
                 margin-top: 1rem;
             }
@@ -409,9 +397,9 @@ export default defineComponent({
                 font-size: 12px;
                 margin-bottom: 0.25rem;
 
-                #student-progress {
+                .value {
                     color: var(--color-base--emphasized);
-                    margin-left: 6px;
+                    font-weight: 500;
                 }
             }
 
@@ -424,7 +412,9 @@ export default defineComponent({
             }
 
             .container-panel-status__progressScroll {
+                width: 0%;
                 height: inherit;
+                border-radius: inherit;
                 background: var(--color-primary);
                 transition: var(--transition-hover);
             }

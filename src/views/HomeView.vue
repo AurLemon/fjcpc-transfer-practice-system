@@ -40,22 +40,24 @@ const addPosterClickCount = () => {
             <div class="page-guide-desc__block">
                 <div class="page-guide-desc__icon material-icons">developer_board</div>
                 <div class="page-guide-desc__text">
-                    <div class="page-guide-desc__title">谁开发的这个网站？</div>
-                    <div class="page-guide-desc__subtitle">刚好是计算机专业的3+2学生，具体请看关于页。无聊做的，顺带刷刷项目经验！</div>
+                    <div class="page-guide-desc__title">谁弄得这个网站？</div>
+                    <div class="page-guide-desc__subtitle">3+2的学生，具体看关于页。无聊做的，练一下项目经验，如果能帮到你很荣幸。</div>
                 </div>
             </div>
             <div class="page-guide-desc__block">
                 <div class="page-guide-desc__icon material-icons">security</div>
                 <div class="page-guide-desc__text">
                     <div class="page-guide-desc__title">你这安全吗？</div>
-                    <div class="page-guide-desc__subtitle">可以看仓库源代码审查，数据库存储的都是 AES 加密后的姓名和身份证，登录传输的过程采用 SM2 算法。</div>
+                    <div class="page-guide-desc__subtitle">
+                        可以审查仓库源代码，数据库存储的都是 AES 加密后的姓名和身份证，登录传输的过程采用 SM2 算法，只要有存储的数据都没有明文存储。
+                    </div>
                 </div>
             </div>
             <div class="page-guide-desc__block">
                 <div class="page-guide-desc__icon material-icons">animation</div>
                 <div class="page-guide-desc__text">
                     <div class="page-guide-desc__title">这里和船政什么区别？</div>
-                    <div class="page-guide-desc__subtitle">船政的只能一直做一套卷子，卷子的题目永远都不一样，我这里把卷子的题目都爬下来了，想干嘛都行。</div>
+                    <div class="page-guide-desc__subtitle">船政的只能一直做一套卷子，而且卷子的题目不是固定的，我这里把卷子的题目都爬下来了，想干嘛都行。</div>
                 </div>
             </div>
             <div class="page-guide-desc__block">
@@ -63,7 +65,7 @@ const addPosterClickCount = () => {
                 <div class="page-guide-desc__text">
                     <div class="page-guide-desc__title">一定要身份证登录吗？</div>
                     <div class="page-guide-desc__subtitle">
-                        不登录也能做题，但是数据只保存在浏览器。只有船政的转轨系统有你了才能登录，故意设计的喵，没注册的会默认注册。
+                        不登录也能做题，但是数据只保存在浏览器。只有船政的转轨系统有你了才能登录，没注册的会默认注册。担心身份证泄露的可以不登录。
                     </div>
                 </div>
             </div>
@@ -79,7 +81,7 @@ const addPosterClickCount = () => {
                 <div class="page-guide-desc__text">
                     <div class="page-guide-desc__title">站点怎么弄得？</div>
                     <div class="page-guide-desc__subtitle">
-                        自购服务器+个人域名+自己写的站点（前端 Vue，后端 Nest），本来考虑微服务的但是懒得再搬了，以后其他项目再弄吧。
+                        自购服务器 + 个人域名 + 个人项目（前端 Vue，后端 Nest），本来考虑微服务的但是懒得再搬了，以后其他项目再弄吧。
                     </div>
                 </div>
             </div>

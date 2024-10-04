@@ -46,7 +46,7 @@ import PageViewContainer from './PageViewContainer.vue'
 @use '@/assets/styles/media_screen.scss' as screen;
 
 .page-container {
-    --container-height: 75vh;
+    --container-height: 78vh;
     --panel-width: 300px;
     display: flex;
     justify-content: center;

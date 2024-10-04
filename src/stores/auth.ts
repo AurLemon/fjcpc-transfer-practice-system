@@ -66,7 +66,6 @@ export const useAuthStore = defineStore('auth', {
         },
         async refreshTokenAndRetry() {
             if (this.isTokenRefreshing) {
-                console.log('请求正在进行，忽略重复调用')
                 return
             }
 

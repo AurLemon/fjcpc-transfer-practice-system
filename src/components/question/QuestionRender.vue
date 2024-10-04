@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import _ from 'lodash-es'
+import dayjs from 'dayjs'
+import * as _ from 'lodash-es'
 
 import { get, post } from '@/api/api'
 import { debounce } from '@/utils/debounce'
@@ -9,119 +10,22 @@ import { useUserStore } from '@/stores/user'
 import { useQuestionStore } from '@/stores/question'
 import { useNotifyStore } from '@/stores/notify'
 
+/**
+ * Pinia 状态
+ */
 const userStore = useUserStore()
 const questionStore = useQuestionStore()
 const notifyStore = useNotifyStore()
 
+/**
+ * TypeScript 定义
+ */
 interface UserSetting {
     course: number
     subject: number
     type: number
     sort_column: string
     order: string
-}
-
-const userSetting = ref<UserSetting>({
-    course: 1,
-    subject: -1,
-    type: -1,
-    sort_column: 'pid',
-    order: 'asc'
-})
-
-const saveUserSetting = (): void => {
-    localStorage.setItem('user_setting', JSON.stringify(userSetting.value))
-}
-
-const readUserSetting = (): UserSetting | null => {
-    const response: string | null = localStorage.getItem('user_setting')
-    if (response === null) {
-        return null
-    }
-    return JSON.parse(response)
-}
-
-const savedSetting = readUserSetting()
-if (savedSetting !== null) {
-    userSetting.value = savedSetting
-}
-
-const isDone = ref<boolean>(false)
-const isMark = ref<boolean>(false)
-
-const updateDone = async () => {
-    if (!currentQuestion.value) {
-        return
-    }
-
-    if (isDone.value) {
-        await userStore.deleteProgress(currentQuestion.value.pid)
-    } else {
-        await userStore.addProgress(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
-    }
-
-    isDone.value = !isDone.value
-}
-
-const updateBookmark = async () => {
-    if (!currentQuestion.value) {
-        return
-    }
-
-    if (isMark.value) {
-        userStore.deleteStar(currentQuestion.value.pid).catch(() => {
-            isMark.value = true
-        })
-    } else {
-        await userStore
-            .addStar(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
-            .catch(() => {
-                isMark.value = false
-            })
-    }
-
-    isMark.value = !isMark.value
-}
-
-const renderQuestionCourse = (course: number) => {
-    if (course === 1) {
-        return '文化基础'
-    } else if (course === 2) {
-        return '专业基础'
-    }
-}
-
-const renderQuestionSubject = (course: number, subject: number) => {
-    if (subject === -1) {
-        return renderQuestionCourse(course)
-    }
-
-    if (course === 1) {
-        switch (subject) {
-            case 1:
-                return '语文'
-            case 2:
-                return '数学'
-            case 3:
-                return '英语'
-            case 4:
-                return '政治'
-        }
-    } else if (course === 2) {
-        return questionStore.questionInfo.profession_lesson.find((item) => item.subject === subject)?.name || null
-    }
-}
-const renderQuestionType = (type: number) => {
-    switch (type) {
-        case 0:
-            return '单选题'
-        case 1:
-            return '多选题'
-        case 2:
-            return '判断题'
-        case 8:
-            return '阅读题'
-    }
 }
 
 interface Option {
@@ -171,6 +75,28 @@ interface QuestionsResponse {
     }
 }
 
+/**
+ * 定义基本数据
+ */
+const userSetting = ref<UserSetting>({
+    course: 1,
+    subject: -1,
+    type: -1,
+    sort_column: 'pid',
+    order: 'asc'
+})
+
+const lastUserSetting = ref<UserSetting>({
+    course: 1,
+    subject: -1,
+    type: -1,
+    sort_column: 'pid',
+    order: 'asc'
+})
+
+const isDone = ref<boolean>(false)
+const isMark = ref<boolean>(false)
+
 const questions = ref<Question[]>([])
 const questionsInfo = ref<QuestionsResponse['stat']>({
     course: 1,
@@ -186,6 +112,120 @@ const prevPid = ref<string | null>(null)
 const currentId = ref<number>(1)
 const isLoadQuestion = ref<boolean>(false)
 const reloadCount = ref<number>(0)
+
+const isSheetsActive = ref<boolean>(false)
+
+const minIndex = ref(1)
+const maxIndex = ref(1)
+
+const userChoice = ref<string[] | string[][]>([])
+
+const showAnswer = ref<boolean>(false)
+const isAnswerCorrect = ref<boolean>(false)
+
+const showQuestionDetail = ref<boolean>(false)
+
+/**
+ * 用户数据
+ */
+const saveUserSetting = (): void => {
+    localStorage.setItem('user_setting', JSON.stringify(userSetting.value))
+}
+
+const readUserSetting = (): UserSetting | null => {
+    const response: string | null = localStorage.getItem('user_setting')
+    if (response === null) {
+        return null
+    }
+    return JSON.parse(response)
+}
+
+const savedSetting = readUserSetting()
+if (savedSetting !== null) {
+    userSetting.value = savedSetting
+}
+
+/**
+ * 题目状态
+ */
+const updateDone = async () => {
+    if (!currentQuestion.value) {
+        return
+    }
+
+    if (isDone.value) {
+        await userStore.deleteProgress(currentQuestion.value.pid)
+    } else {
+        await userStore.addProgress(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
+    }
+
+    isDone.value = !isDone.value
+}
+
+const updateBookmark = async () => {
+    if (!currentQuestion.value) {
+        return
+    }
+
+    if (isMark.value) {
+        userStore.deleteStar(currentQuestion.value.pid).catch(() => {
+            isMark.value = true
+        })
+    } else {
+        await userStore
+            .addStar(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
+            .catch(() => {
+                isMark.value = false
+            })
+    }
+
+    isMark.value = !isMark.value
+}
+
+/**
+ * 渲染题目
+ */
+const renderQuestionCourse = (course: number) => {
+    if (course === 1) {
+        return '文化基础'
+    } else if (course === 2) {
+        return '专业基础'
+    }
+}
+
+const renderQuestionSubject = (course: number, subject: number) => {
+    if (subject === -1) {
+        return renderQuestionCourse(course)
+    }
+
+    if (course === 1) {
+        switch (subject) {
+            case 1:
+                return '语文'
+            case 2:
+                return '数学'
+            case 3:
+                return '英语'
+            case 4:
+                return '政治'
+        }
+    } else if (course === 2) {
+        return questionStore.questionInfo.profession_lesson.find((item) => item.subject === subject)?.name || null
+    }
+}
+
+const renderQuestionType = (type: number) => {
+    switch (type) {
+        case 0:
+            return '单选题'
+        case 1:
+            return '多选题'
+        case 2:
+            return '判断题'
+        case 8:
+            return '阅读题'
+    }
+}
 
 const addQuestion = (newQuestions: any[]) => {
     newQuestions.forEach((newQuestion) => {
@@ -217,9 +257,8 @@ const getQuestions = async (params?: any, callback?: any) => {
         if (response.data.data.questions.length === 0) {
             notifyStore.addMessage(
                 'failed',
-                `有没有可能，${renderQuestionSubject(userSetting.value.course, questionsInfo.value.subject)}根本就没有${renderQuestionType(userSetting.value.type)}`
+                `有没有可能，${renderQuestionSubject(userSetting.value.course, questionsInfo.value.subject) ?? '它'}根本就没有${renderQuestionType(userSetting.value.type) ?? '这个'}`
             )
-            notifyStore.addMessage('success', '即将加载原数据')
             userSetting.value = lastUserSetting.value
             setTimeout(() => {
                 getQuestions()
@@ -290,8 +329,6 @@ const nextQuestion = () => {
     }
 }
 
-const isSheetsActive = ref<boolean>(false)
-
 const activeSheets = () => {
     isSheetsActive.value = !isSheetsActive.value
 }
@@ -314,17 +351,10 @@ const toQuestionByIndex = (indexNumber: number) => {
     }
 }
 
-const minIndex = ref(1)
-const maxIndex = ref(1)
-
-watch(currentId, (newVal, oldVal) => {
+const debouncedWatchHandler = debounce((newVal, oldVal) => {
     const indices = questions.value.map((q) => q.index)
     minIndex.value = Math.min(...indices)
     maxIndex.value = Math.max(...indices)
-
-    // 下面这些打印出来都是给我自己看的
-    // console.log('最小 index:', minIndex.value)
-    // console.log('最大 index:', maxIndex.value)
 
     if (maxIndex.value - newVal <= 4 && nextPid.value) {
         if (maxIndex.value < questionsInfo.value.total_questions) {
@@ -334,7 +364,6 @@ watch(currentId, (newVal, oldVal) => {
 
     if (newVal - minIndex.value > 8) {
         questions.value = questions.value.filter((q) => q.index >= newVal - 8)
-        // console.log('移除旧问题，剩余问题:', questions.value)
     }
 
     if (newVal - minIndex.value < 4 && prevPid.value) {
@@ -342,17 +371,11 @@ watch(currentId, (newVal, oldVal) => {
             debouncedGetQuestions({ prev_pid: prevPid.value })
         }
     }
+}, 750)
 
-    // if (newVal === 1 && !prevPid.value) {
-    //     console.log('已经到最前面，没有更多数据可以加载。')
-    // }
-
-    // if (maxIndex.value >= questionsInfo.value.total_questions && !nextPid.value) {
-    //     console.log('已经到最后一题，没有更多数据可以加载。')
-    // }
+watch(currentId, (newVal, oldVal) => {
+    debouncedWatchHandler(newVal, oldVal)
 })
-
-const userChoice = ref<string[] | string[][]>([])
 
 const addChoice = (id: number, type?: string, subOptionId?: number) => {
     const stringId = id.toString()
@@ -386,46 +409,39 @@ const checkAnswerCorrect = () => {
     return _.isEqual(_.sortBy(userChoice.value), _.sortBy(currentQuestion.value?.answer || []))
 }
 
-const renderAnswerNumber = (
-    type: number,
-    answer: string[] | string[][],
-    options: { id: number; xx?: string; txt: string }[],
-    subOptions?: Option[] | null
-) => {
+const renderAnswerNumber = (type: number, answer: string[] | string[][], options: { id: number; xx?: string; txt: string }[], subOptions?: Option[] | null) => {
     if (type === 2) {
         return (answer as string[])
             .map((a) => {
-                const option = options.find((opt) => opt.id.toString() === a);
+                const option = options.find((opt) => opt.id.toString() === a)
                 if (option) {
-                    return option.txt === '对' ? 'T' : 'F';
+                    return option.txt === '对' ? 'T' : 'F'
                 }
-                return '';
+                return ''
             })
-            .join('');
+            .join('')
     }
 
     if (Array.isArray(answer[0])) {
         return (answer as string[][])
             .map((subAnswer, index) => {
-                const currentSubOptions = subOptions && subOptions[index] ? subOptions[index].list || [] : [];
+                const currentSubOptions = subOptions && subOptions[index] ? subOptions[index].list || [] : []
                 return subAnswer
                     .map((a) => {
-                        const option = currentSubOptions.find((opt) => opt.id.toString() === a);
-                        return option?.xx || '';
+                        const option = currentSubOptions.find((opt) => opt.id.toString() === a)
+                        return option?.xx || ''
                     })
-                    .join('');
+                    .join('')
             })
-            .join('-');
+            .join('-')
     } else {
         return (answer as string[])
             .map((a) => options.find((opt) => opt.id.toString() === a)?.xx || '')
             .sort()
-            .join('');
+            .join('')
     }
 }
 
-const showAnswer = ref<boolean>(false)
-const isAnswerCorrect = ref<boolean>(false)
 const checkAnswer = () => {
     showAnswer.value = true
     isAnswerCorrect.value = checkAnswerCorrect() ? true : false
@@ -441,13 +457,9 @@ const checkAnswer = () => {
     }
 }
 
-const lastUserSetting = ref<UserSetting>({
-    course: 1,
-    subject: -1,
-    type: -1,
-    sort_column: 'pid',
-    order: 'asc'
-})
+const showQuestionAnswer = () => {
+    showAnswer.value = !showAnswer.value
+}
 
 watch(
     () => JSON.parse(JSON.stringify(userSetting.value)),
@@ -490,6 +502,10 @@ const handleKeydown = (event: KeyboardEvent) => {
     }
 }
 
+const updateQuestionDetail = () => {
+    showQuestionDetail.value = !showQuestionDetail.value
+}
+
 watch(
     currentQuestion,
     async (newQuestion) => {
@@ -504,15 +520,32 @@ watch(
     { immediate: true }
 )
 
+/**
+ * 转换
+ */
+const formatMileTimestamp = (timestamp: string | number): string => {
+    return dayjs(Number(timestamp)).format('YYYY-MM-DD HH:mm:ss')
+}
+
+const questionAccuracy = (done: number, incorrect: number): number => {
+    if (done === 0) {
+        return 0
+    }
+
+    return Number(((done - incorrect) / done).toFixed(2))
+}
+
+/**
+ * Hooks
+ */
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown)
+    getQuestions()
 })
 
 onBeforeUnmount(() => {
     window.removeEventListener('keydown', handleKeydown)
 })
-
-getQuestions()
 </script>
 
 <template>
@@ -683,11 +716,60 @@ getQuestions()
                 </select>
             </div>
             <div class="question-render-tools__buttons">
+                <div class="question-render-tools__value" content="正确率" v-tippy="{ appendTo: 'parent' }">
+                    {{ questionAccuracy(currentQuestion?.done_count ?? 0, currentQuestion?.incorrect_count ?? 0) + '%' }}
+                </div>
                 <div class="question-render-tools__button material-icons" @click="updateDone" content="做没做过这题" v-tippy="{ appendTo: 'parent' }">
                     {{ isDone ? 'check_circle' : 'check_circle_outline' }}
                 </div>
                 <div class="question-render-tools__button material-icons" @click="updateBookmark" content="收藏" v-tippy="{ appendTo: 'parent' }">
                     {{ isMark ? 'bookmark' : 'bookmark_border' }}
+                </div>
+                <div class="question-render-tools__button material-icons" @click="showQuestionAnswer" content="显示答案" v-tippy="{ appendTo: 'parent' }">
+                    {{ showAnswer ? 'circle' : 'block' }}
+                </div>
+                <div class="question-render-tools__button material-icons" @click="updateQuestionDetail" content="题目信息" v-tippy="{ appendTo: 'parent' }">
+                    more_vert
+                </div>
+                <div class="question-tools-info" :class="{ active: showQuestionDetail }">
+                    <div class="question-tools-info__pid">
+                        <div class="question-tools-info__value">{{ currentQuestion?.pid }}</div>
+                        <div class="question-tools-info__label">题目编号</div>
+                        <div class="question-tools-info__tags">
+                            <div class="question-tools-info__tag">{{ renderQuestionCourse(currentQuestion?.course ?? 1) }}</div>
+                            <div class="question-tools-info__tag">{{ renderQuestionSubject(currentQuestion?.course ?? 1, currentQuestion?.subject ?? 1) }}</div>
+                        </div>
+                        <div class="question-tools-info__status">
+                            <div class="active" v-if="currentQuestion?.updated_time ?? false"><span class="material-icons">done</span> 已启用</div>
+                            <div class="inactive" v-else><span class="material-icons">close</span> 未启用</div>
+                        </div>
+                    </div>
+                    <div class="question-tools-info__list">
+                        <div class="question-tools-info__item">
+                            <div class="question-tools-info__value">{{ currentQuestion?.crawl_count }}</div>
+                            <div class="question-tools-info__label">出现次数</div>
+                        </div>
+                        <div class="question-tools-info__item">
+                            <div class="question-tools-info__value">{{ currentQuestion?.done_count }}</div>
+                            <div class="question-tools-info__label">被完成次数</div>
+                        </div>
+                        <div class="question-tools-info__item">
+                            <div class="question-tools-info__value">{{ currentQuestion?.incorrect_count }}</div>
+                            <div class="question-tools-info__label">错误计数</div>
+                        </div>
+                        <div class="question-tools-info__item">
+                            <div class="question-tools-info__value">{{ formatMileTimestamp(currentQuestion?.created_time ?? '0') }}</div>
+                            <div class="question-tools-info__label">创建时间</div>
+                        </div>
+                        <div class="question-tools-info__item">
+                            <div class="question-tools-info__value">{{ formatMileTimestamp(currentQuestion?.updated_time ?? '0') }}</div>
+                            <div class="question-tools-info__label">更新时间</div>
+                        </div>
+                        <div class="question-tools-info__item">
+                            <div class="question-tools-info__value">{{ formatMileTimestamp(currentQuestion?.crawl_time ?? '0') }}</div>
+                            <div class="question-tools-info__label">被获取时间</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1001,6 +1083,11 @@ getQuestions()
         position: relative;
         transition: 250ms ease;
 
+        @include screen.media-screen(phone) {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
         .question-answer {
             display: flex;
             justify-content: space-between;
@@ -1059,6 +1146,7 @@ getQuestions()
                 color: var(--color-surface-0);
                 font-size: 14px;
                 background: var(--color-primary);
+                box-shadow: 0 2px 8px var(--border-color-base);
                 margin: 0 2rem;
                 margin-bottom: auto;
                 padding: 6px 16px;
@@ -1111,6 +1199,116 @@ getQuestions()
                     transform: scale(0.9);
                     transition-duration: 80ms;
                 }
+            }
+
+            .question-render-tools__value {
+                color: var(--color-surface-4);
+                font-size: 14px;
+                font-weight: 500;
+                margin-right: 1rem;
+            }
+        }
+
+        .question-tools-info {
+            opacity: 0;
+            pointer-events: none;
+            user-select: none;
+            display: flex;
+            gap: 1.75rem;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid var(--border-color-base);
+            border-radius: 12px;
+            background: var(--background-color-overlay--lighter);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 -1px 4px var(--border-color-base);
+            position: absolute;
+            bottom: 100%;
+            right: 15px;
+            z-index: 101;
+            overflow: hidden;
+            transition: var(--transition-hover);
+
+            @include screen.media-screen(phone) {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            &.active {
+                opacity: 1;
+                pointer-events: all;
+                user-select: auto;
+            }
+
+            .question-tools-info__pid {
+                .question-tools-info__value {
+                    color: var(--color-base);
+                    font-size: 24px;
+                    margin-bottom: 0;
+                }
+
+                .question-tools-info__label {
+                    font-size: 12px;
+                }
+
+                .question-tools-info__tags {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.25rem;
+                    margin: 8px 0;
+
+                    .question-tools-info__tag {
+                        color: var(--color-surface-0);
+                        font-size: 10px;
+                        padding: 2px 4px;
+                        background: var(--color-primary);
+                        border-radius: 8px;
+                    }
+                }
+
+                .question-tools-info__status {
+                    .active,
+                    .inactive {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        color: var(--color-base--emphasized);
+                        font-size: 12px;
+                        font-weight: 600;
+                    }
+
+                    .material-icons {
+                        font-size: 16px;
+                        font-weight: 600;
+                    }
+
+                    .active .material-icons {
+                        color: var(--success-color);
+                    }
+
+                    .inactive .material-icons {
+                        color: var(--failed-color);
+                    }
+                }
+            }
+
+            .question-tools-info__value {
+                color: var(--color-base--subtle);
+                font-size: 14px;
+                font-weight: 500;
+                margin-bottom: 2px;
+            }
+
+            .question-tools-info__label {
+                color: var(--color-surface-4);
+                font-size: 10px;
+            }
+
+            .question-tools-info__list {
+                display: grid;
+                grid-auto-flow: column;
+                grid-template-rows: repeat(3, 1fr);
+                grid-gap: 0.5rem;
             }
         }
     }

@@ -36,6 +36,7 @@
     "devDependencies": {
         "@rushstack/eslint-patch": "^1.8.0",
         "@tsconfig/node20": "^20.1.4",
+        "@types/canvas-confetti": "^1.6.4",
         "@types/crypto-js": "^4.2.2",
         "@types/node": "^20.16.5",
         "@types/sm-crypto": "^0.3.4",
