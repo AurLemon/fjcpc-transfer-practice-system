@@ -532,7 +532,7 @@ const questionAccuracy = (done: number, incorrect: number): number => {
         return 0
     }
 
-    return Number(((done - incorrect) / done).toFixed(2))
+    return Number(((done - incorrect) / done).toFixed(2)) * 100
 }
 
 /**
