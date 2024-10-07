@@ -356,21 +356,22 @@ const debouncedWatchHandler = debounce((newVal, oldVal) => {
     minIndex.value = Math.min(...indices)
     maxIndex.value = Math.max(...indices)
 
-    if (maxIndex.value - newVal <= 4 && nextPid.value) {
+    if (maxIndex.value - newVal <= 5 && nextPid.value) {
         if (maxIndex.value < questionsInfo.value.total_questions) {
             debouncedGetQuestions({ next_pid: nextPid.value })
         }
     }
 
-    if (newVal - minIndex.value > 8) {
-        questions.value = questions.value.filter((q) => q.index >= newVal - 8)
-    }
+    // 想了下还是先注释掉
+    // if (newVal - minIndex.value > 8) {
+    //     questions.value = questions.value.filter(q => q.index >= newVal - 8)
+    // }
 
-    if (newVal - minIndex.value < 4 && prevPid.value) {
-        if (minIndex.value > 1) {
-            debouncedGetQuestions({ prev_pid: prevPid.value })
-        }
-    }
+    // if (newVal - minIndex.value < 4 && prevPid.value) {
+    //     if (minIndex.value > 1) {
+    //         debouncedGetQuestions({ prev_pid: prevPid.value })
+    //     }
+    // }
 }, 750)
 
 watch(currentId, (newVal, oldVal) => {
