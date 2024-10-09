@@ -19,7 +19,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <nav class="page-menu">
+    <header class="page-menu">
         <div class="page-menu-wrapper">
             <div class="page-menu-title" @click="showMobilePanel">计大船政转轨考の刷题系统3.0</div>
             <div class="page-menu-list">
@@ -35,7 +35,7 @@ export default defineComponent({
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 </template>
 
 <style lang="scss" scoped>

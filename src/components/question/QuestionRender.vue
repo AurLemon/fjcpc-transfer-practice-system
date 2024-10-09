@@ -9,6 +9,7 @@ import { debounce } from '@/utils/debounce'
 import { useUserStore } from '@/stores/user'
 import { useQuestionStore } from '@/stores/question'
 import { useNotifyStore } from '@/stores/notify'
+import { useCardStore } from '@/stores/card'
 
 /**
  * Pinia 状态
@@ -305,27 +306,33 @@ const resetQuestionComplete = () => {
 
 const prevQuestion = () => {
     resetQuestionComplete()
-    const previousQuestion: any = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
+    const previousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
 
     if (previousQuestion) {
         currentId.value = previousQuestion.index
     } else {
-        if (currentId.value === 1) {
-            notifyStore.addMessage('success', '没上一题了姐姐')
-        }
+        debouncedGetQuestions({ index: currentId.value - 1 }, () => {
+            const newPreviousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
+            if (newPreviousQuestion) {
+                currentId.value = newPreviousQuestion.index
+            }
+        })
     }
 }
 
 const nextQuestion = () => {
     resetQuestionComplete()
-    const nextQuestion: any = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
+    const nextQuestion = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
 
     if (nextQuestion) {
         currentId.value = nextQuestion.index
     } else {
-        if (currentId.value === questionsInfo.value.total_questions) {
-            notifyStore.addMessage('success', '没下一题了姐姐')
-        }
+        debouncedGetQuestions({ index: currentId.value + 1 }, () => {
+            const newNextQuestion = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
+            if (newNextQuestion) {
+                currentId.value = newNextQuestion.index
+            }
+        })
     }
 }
 
@@ -480,26 +487,29 @@ watch(
 )
 
 const handleKeydown = (event: KeyboardEvent) => {
-    switch (event.key) {
-        case 'ArrowLeft':
-            prevQuestion()
-            break
-        case 'ArrowRight':
-            nextQuestion()
-            break
-        case 'Enter':
-            if (!showAnswer.value) {
-                if (userChoice.value.length > 0 && currentQuestion) {
-                    checkAnswer()
-                } else {
-                    notifyStore.addMessage('failed', '未选择答案')
-                }
-            } else {
+    const cardStore = useCardStore()
+    if (!cardStore.isViewContainerOn()) {
+        switch (event.key) {
+            case 'ArrowLeft':
+                prevQuestion()
+                break
+            case 'ArrowRight':
                 nextQuestion()
-            }
-            break
-        default:
-            break
+                break
+            case 'Enter':
+                if (!showAnswer.value) {
+                    if (userChoice.value.length > 0 && currentQuestion) {
+                        checkAnswer()
+                    } else {
+                        notifyStore.addMessage('failed', '未选择答案')
+                    }
+                } else {
+                    nextQuestion()
+                }
+                break
+            default:
+                break
+        }
     }
 }
 
