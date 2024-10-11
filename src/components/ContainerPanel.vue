@@ -95,7 +95,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <div class="page-container-panel" :class="{ show: cardStore.mobileShowPanel }">
+    <nav class="page-container-panel" :class="{ show: cardStore.mobileShowPanel }">
         <div class="container-panel-countdown">
             <div class="container-panel-header-countdown">
                 <div class="container-panel-header-countdown__value">{{ questionStore.isGetQuestionInfo ? '-' : getProfessionCount() }}</div>
@@ -177,7 +177,7 @@ export default defineComponent({
                 <div class="loading material-icons">autorenew</div>
             </div>
         </div>
-    </div>
+    </nav>
 </template>
 
 <style lang="scss" scoped>
