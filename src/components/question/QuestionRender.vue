@@ -306,11 +306,13 @@ const resetQuestionComplete = () => {
 
 const prevQuestion = () => {
     resetQuestionComplete()
+
+    // 获取当前的前一个问题
     const previousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
 
     if (previousQuestion) {
         currentId.value = previousQuestion.index
-    } else {
+    } else if (currentId.value > 1) {
         debouncedGetQuestions({ index: currentId.value - 1 }, () => {
             const newPreviousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
             if (newPreviousQuestion) {
@@ -322,11 +324,12 @@ const prevQuestion = () => {
 
 const nextQuestion = () => {
     resetQuestionComplete()
+
     const nextQuestion = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
 
     if (nextQuestion) {
         currentId.value = nextQuestion.index
-    } else {
+    } else if (currentId.value < questions.value.length) {
         debouncedGetQuestions({ index: currentId.value + 1 }, () => {
             const newNextQuestion = questions.value.filter((q) => q.index > currentId.value).sort((a, b) => a.index - b.index)[0]
             if (newNextQuestion) {
@@ -369,16 +372,15 @@ const debouncedWatchHandler = debounce((newVal, oldVal) => {
         }
     }
 
-    // 想了下还是先注释掉
-    // if (newVal - minIndex.value > 8) {
-    //     questions.value = questions.value.filter(q => q.index >= newVal - 8)
-    // }
+    if (newVal - minIndex.value > 20) {
+        questions.value = questions.value.filter((q) => q.index >= newVal - 20)
+    }
 
-    // if (newVal - minIndex.value < 4 && prevPid.value) {
-    //     if (minIndex.value > 1) {
-    //         debouncedGetQuestions({ prev_pid: prevPid.value })
-    //     }
-    // }
+    if (newVal - minIndex.value < 5 && prevPid.value) {
+        if (minIndex.value > 1) {
+            debouncedGetQuestions({ prev_pid: prevPid.value })
+        }
+    }
 }, 750)
 
 watch(currentId, (newVal, oldVal) => {
@@ -415,6 +417,10 @@ const addChoice = (id: number, type?: string, subOptionId?: number) => {
 
 const checkAnswerCorrect = () => {
     return _.isEqual(_.sortBy(userChoice.value), _.sortBy(currentQuestion.value?.answer || []))
+}
+
+const isArrayEmpty = (arr: string[] | string[][]): Boolean => {
+    return _.isEmpty(arr) || arr.every(item => Array.isArray(item) && isArrayEmpty(item));
 }
 
 const renderAnswerNumber = (type: number, answer: string[] | string[][], options: { id: number; xx?: string; txt: string }[], subOptions?: Option[] | null) => {
@@ -651,7 +657,7 @@ onBeforeUnmount(() => {
             </div>
         </div>
         <div class="question-render-tools">
-            <div class="question-answer" v-if="userChoice.length > 0 && currentQuestion">
+            <div class="question-answer" v-if="!isArrayEmpty(userChoice) && currentQuestion">
                 <div class="question-answer-infos">
                     <div class="question-answer-user question-answer-info" v-if="showAnswer">
                         <div class="question-answer-user__label question-answer-info__label">你的答案</div>
