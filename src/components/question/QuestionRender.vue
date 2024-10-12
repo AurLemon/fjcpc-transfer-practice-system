@@ -107,6 +107,8 @@ const questionsInfo = ref<QuestionsResponse['stat']>({
     sort_column: 'pid',
     total_questions: 0
 })
+
+const sequence = ref<string[]>([])
 const nextPid = ref<string | null>(null)
 const prevPid = ref<string | null>(null)
 
@@ -269,6 +271,7 @@ const getQuestions = async (params?: any, callback?: any) => {
             addQuestion(response.data.data.questions)
         }
 
+        sequence.value = response.data.data.sequence
         questionsInfo.value = response.data.data.stat
         nextPid.value = response.data.data.next_pid
         prevPid.value = response.data.data.prev_pid
@@ -307,7 +310,6 @@ const resetQuestionComplete = () => {
 const prevQuestion = () => {
     resetQuestionComplete()
 
-    // 获取当前的前一个问题
     const previousQuestion = questions.value.filter((q) => q.index < currentId.value).sort((a, b) => b.index - a.index)[0]
 
     if (previousQuestion) {
