@@ -96,6 +96,8 @@ const lastUserSetting = ref<UserSetting>({
 })
 
 const isDone = ref<boolean>(false)
+const doneStatus = ref<string[]>([])
+
 const isMark = ref<boolean>(false)
 
 const questions = ref<Question[]>([])
@@ -146,6 +148,7 @@ const readUserSetting = (): UserSetting | null => {
 }
 
 const savedSetting = readUserSetting()
+
 if (savedSetting !== null) {
     userSetting.value = savedSetting
 }
@@ -232,6 +235,9 @@ const renderQuestionType = (type: number) => {
     }
 }
 
+/**
+ * 逻辑
+ */
 const addQuestion = (newQuestions: any[]) => {
     newQuestions.forEach((newQuestion) => {
         const exists = questions.value.some((q) => q.index === newQuestion.index)
@@ -285,15 +291,22 @@ const getQuestions = async (params?: any, callback?: any) => {
                 const isDone = await userStore.isProgress(pid)
 
                 if (!isDone) {
-                    await getQuestions({ index: i + 1 }, () => {
-                        currentId.value = i + 1
-                        nextPid.value = sequence.value[i]
-                    })
+                    const existingQuestion = questions.value.find((q) => q.pid === pid)
+
+                    if (existingQuestion) {
+                        currentId.value = existingQuestion.index
+                        nextPid.value = pid
+                    } else {
+                        await getQuestions({ index: i + 1 }, () => {
+                            currentId.value = i + 1
+                            nextPid.value = sequence.value[i]
+                        })
+                    }
                     return
                 }
-
-                isFirstLoad.value = false
             }
+
+            isFirstLoad.value = false
         }
 
         if (callback) {
@@ -375,9 +388,14 @@ const toQuestionByIndex = (indexNumber: number) => {
             },
             () => {
                 currentId.value = indexNumber
-                debouncedGetQuestions({
-                    next_pid: nextPid.value
-                })
+                debouncedGetQuestions(
+                    {
+                        next_pid: nextPid.value
+                    },
+                    () => {
+                        currentId.value = indexNumber
+                    }
+                )
             }
         )
     }
@@ -405,7 +423,16 @@ const debouncedWatchHandler = debounce((newVal, oldVal) => {
     }
 }, 750)
 
-watch(currentId, (newVal, oldVal) => {
+watch(currentId, async (newVal, oldVal) => {
+    const currentPid = sequence.value[newVal - 1]
+    const progressData = await userStore.getAllProgress()
+
+    doneStatus.value = progressData.map((progress) => progress.pid)
+
+    if (!doneStatus.value.includes(currentPid)) {
+        doneStatus.value.push(currentPid)
+    }
+
     debouncedWatchHandler(newVal, oldVal)
 })
 
@@ -614,7 +641,7 @@ onBeforeUnmount(() => {
                         class="question-render-info__sheet"
                         v-for="n in questionsInfo?.total_questions"
                         :key="n"
-                        :class="{ current: currentId === n }"
+                        :class="{ current: currentId === n, done: doneStatus.includes(sequence[n - 1]) }"
                         @click="toQuestionByIndex(n)"
                         :pid="sequence[n - 1]"
                     >
@@ -966,6 +993,16 @@ onBeforeUnmount(() => {
                     &:hover {
                         color: var(--color-surface-0);
                         background: var(--color-primary);
+                    }
+
+                    &.done {
+                        color: var(--color-surface-0);
+                        font-weight: 600;
+                        background: var(--success-color);
+
+                        &:hover {
+                            background: var(--color-base--subtle);
+                        }
                     }
 
                     &.current {

@@ -84,8 +84,8 @@ export const useUserStore = defineStore('user', {
                 })
 
                 if (response.data.code === 200) {
-                    const progressData = response.data.data
-                    await setUserProgress(progressData)
+                    const data = response.data.data
+                    await setUserProgress(data)
                 } else {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
@@ -111,6 +111,14 @@ export const useUserStore = defineStore('user', {
                 return false
             }
         },
+        async getAllProgress() {
+            try {
+                const data = await getUserProgress()
+                return data
+            } catch (err) {
+                return []
+            }
+        },
         async addProgress(pid: string, course: number, subject: number, type: number) {
             const authStore = useAuthStore()
             const notifyStore = useNotifyStore()
@@ -123,7 +131,6 @@ export const useUserStore = defineStore('user', {
             try {
                 let currentProgress = await getUserProgress()
 
-                // 确保 currentProgress 是一个数组
                 if (!Array.isArray(currentProgress)) {
                     currentProgress = []
                 }
@@ -142,7 +149,6 @@ export const useUserStore = defineStore('user', {
                     if (response.data.code === 200) {
                         const serverProgress = await getUserProgress()
 
-                        // 再次确保返回的是数组
                         if (!serverProgress.some((item) => item.pid === pid)) {
                             const updatedProgress = [...serverProgress, { pid, course, subject, type, time: Date.now().toString() }]
                             await setUserProgress(updatedProgress)
@@ -276,14 +282,14 @@ export const useUserStore = defineStore('user', {
             const notifyStore = useNotifyStore()
             const userStore = useUserStore()
             const token = authStore.readToken()
-        
+
             const starItem: StarItem = {
                 pid,
                 course,
                 subject,
                 time: new Date().toISOString()
             }
-        
+
             try {
                 if (userStore.readLogin()) {
                     const response: any = await post(
@@ -295,7 +301,7 @@ export const useUserStore = defineStore('user', {
                             }
                         }
                     )
-        
+
                     if (response.data.code === 200) {
                         const exists = await checkStarExists(pid, 'wrong')
                         if (!exists) {
@@ -329,10 +335,10 @@ export const useUserStore = defineStore('user', {
             const notifyStore = useNotifyStore()
             const userStore = useUserStore()
             const token = authStore.readToken()
-        
+
             const pidArray = [pid]
             const type = 'delete'
-        
+
             try {
                 if (userStore.readLogin()) {
                     const response: any = await post(
@@ -344,7 +350,7 @@ export const useUserStore = defineStore('user', {
                             }
                         }
                     )
-        
+
                     if (response.data.code === 200) {
                         await removeItemFromFolder(pid, 'wrong')
                         return true
@@ -366,6 +372,6 @@ export const useUserStore = defineStore('user', {
                 notifyStore.addMessage('failed', `删除收藏时服务器异常（${err}）`)
                 return false
             }
-        }        
+        }
     }
 })
