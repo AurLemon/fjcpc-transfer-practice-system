@@ -77,7 +77,7 @@ interface QuestionsResponse {
 }
 
 /**
- * 定义基本数据
+ * 定义数据
  */
 const userSetting = ref<UserSetting>({
     course: 1,
@@ -127,6 +127,8 @@ const showAnswer = ref<boolean>(false)
 const isAnswerCorrect = ref<boolean>(false)
 
 const showQuestionDetail = ref<boolean>(false)
+
+const isFirstLoad = ref<boolean>(true)
 
 /**
  * 用户数据
@@ -276,6 +278,24 @@ const getQuestions = async (params?: any, callback?: any) => {
         nextPid.value = response.data.data.next_pid
         prevPid.value = response.data.data.prev_pid
 
+        if (isFirstLoad.value) {
+            for (let i = 0; i < sequence.value.length; i++) {
+                const pid = sequence.value[i]
+
+                const isDone = await userStore.isProgress(pid)
+
+                if (!isDone) {
+                    await getQuestions({ index: i + 1 }, () => {
+                        currentId.value = i + 1
+                        nextPid.value = sequence.value[i]
+                    })
+                    return
+                }
+
+                isFirstLoad.value = false
+            }
+        }
+
         if (callback) {
             callback()
         }
@@ -422,7 +442,7 @@ const checkAnswerCorrect = () => {
 }
 
 const isArrayEmpty = (arr: string[] | string[][]): Boolean => {
-    return _.isEmpty(arr) || arr.every(item => Array.isArray(item) && isArrayEmpty(item));
+    return _.isEmpty(arr) || arr.every((item) => Array.isArray(item) && isArrayEmpty(item))
 }
 
 const renderAnswerNumber = (type: number, answer: string[] | string[][], options: { id: number; xx?: string; txt: string }[], subOptions?: Option[] | null) => {
@@ -482,6 +502,7 @@ watch(
     (newVal, oldVal) => {
         if (newVal.course !== oldVal.course) {
             userSetting.value.subject = -1
+            userSetting.value.type = -1
         }
 
         debouncedGetQuestions()
@@ -595,6 +616,7 @@ onBeforeUnmount(() => {
                         :key="n"
                         :class="{ current: currentId === n }"
                         @click="toQuestionByIndex(n)"
+                        :pid="sequence[n - 1]"
                     >
                         {{ n }}
                     </div>
