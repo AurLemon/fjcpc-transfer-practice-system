@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import dayjs from 'dayjs'
 import * as _ from 'lodash-es'
 
@@ -119,6 +119,7 @@ const isLoadQuestion = ref<boolean>(false)
 const reloadCount = ref<number>(0)
 
 const isSheetsActive = ref<boolean>(false)
+const questionRefs = ref<(HTMLElement | null)[]>([])
 
 const minIndex = ref(1)
 const maxIndex = ref(1)
@@ -302,11 +303,12 @@ const getQuestions = async (params?: any, callback?: any) => {
                             nextPid.value = sequence.value[i]
                         })
                     }
+
+                    isFirstLoad.value = false
                     return
                 }
             }
-
-            isFirstLoad.value = false
+            console.log(1)
         }
 
         if (callback) {
@@ -377,6 +379,20 @@ const nextQuestion = () => {
 const activeSheets = () => {
     isSheetsActive.value = !isSheetsActive.value
 }
+
+watch(isSheetsActive, (newVal) => {
+    if (newVal) {
+        nextTick(() => {
+            const currentElement = questionRefs.value[currentId.value - 1]
+            if (currentElement) {
+                currentElement.scrollIntoView({
+                    behavior: 'smooth',
+                    inline: 'nearest'
+                })
+            }
+        })
+    }
+})
 
 const toQuestionByIndex = (indexNumber: number) => {
     if (questions.value.some((q) => q.index === indexNumber)) {
@@ -641,6 +657,7 @@ onBeforeUnmount(() => {
                         class="question-render-info__sheet"
                         v-for="n in questionsInfo?.total_questions"
                         :key="n"
+                        :ref="(el) => questionRefs[n - 1] = el"
                         :class="{ current: currentId === n, done: doneStatus.includes(sequence[n - 1]) }"
                         @click="toQuestionByIndex(n)"
                         :pid="sequence[n - 1]"
