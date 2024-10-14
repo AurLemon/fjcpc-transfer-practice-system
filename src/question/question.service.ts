@@ -325,7 +325,6 @@ export class QuestionService {
   }> {
     const pageSize = 10;
 
-    // 构建基础查询条件
     const baseQueryBuilder = this.questionsRepository
       .createQueryBuilder('question')
       .select(['question.pid'])
@@ -353,13 +352,39 @@ export class QuestionService {
     if (nextPagePid) {
       const currentIndex = sequence.indexOf(nextPagePid);
       if (currentIndex === -1) {
-        throw new Error(`Invalid nextPagePid: ${nextPagePid}`);
+        return {
+          sequence,
+          questions: [],
+          nextPid: null,
+          prevPid: null,
+          stat: {
+            course,
+            subject,
+            type,
+            order,
+            sort_column: sortColumn,
+            total_questions: totalQuestions,
+          },
+        };
       }
       startIndex = currentIndex + 1;
     } else if (prevPagePid) {
       const currentIndex = sequence.indexOf(prevPagePid);
       if (currentIndex === -1) {
-        throw new Error(`Invalid prevPagePid: ${prevPagePid}`);
+        return {
+          sequence,
+          questions: [],
+          nextPid: null,
+          prevPid: null,
+          stat: {
+            course,
+            subject,
+            type,
+            order,
+            sort_column: sortColumn,
+            total_questions: totalQuestions,
+          },
+        };
       }
       startIndex = currentIndex - pageSize;
       if (startIndex < 0) startIndex = 0;
@@ -367,19 +392,15 @@ export class QuestionService {
       startIndex = index;
     }
 
-    // 确保 startIndex 在合理范围内
     if (startIndex < 0) startIndex = 0;
     if (startIndex > totalQuestions) startIndex = totalQuestions;
 
-    // 获取当前页的 pid 列表
     const pagePids = sequence.slice(startIndex, startIndex + pageSize);
 
-    // 查询当前页的题目详情
     const questions = await this.questionsRepository.find({
       where: { pid: In(pagePids) },
     });
 
-    // 确保题目按 sequence 顺序排列
     const pidOrderMap = new Map(pagePids.map((pid, idx) => [pid, idx]));
     questions.sort((a, b) => {
       const indexA = pidOrderMap.get(a.pid) ?? 0;
@@ -387,7 +408,6 @@ export class QuestionService {
       return indexA - indexB;
     });
 
-    // 设置 nextPid 和 prevPid
     const lastPid = pagePids[pagePids.length - 1] || null;
     const firstPid = pagePids[0] || null;
 
@@ -395,7 +415,6 @@ export class QuestionService {
       startIndex + pageSize < totalQuestions ? lastPid : null;
     const prevPidValue = startIndex > 0 ? firstPid : null;
 
-    // 生成带有序号的题目
     const questionsWithIndex = questions.map((question, i) => ({
       index: startIndex + i + 1,
       ...question,
