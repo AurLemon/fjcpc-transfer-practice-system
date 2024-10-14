@@ -167,6 +167,11 @@ export class UserController {
             done_time: Date.now(),
           });
         }
+
+        await this.questionRepository.update(
+          { pid: question.pid },
+          { done_count: () => 'done_count + 1' },
+        );
       }),
     );
 
@@ -250,6 +255,11 @@ export class UserController {
             stared_time: Date.now(),
             folder: 'wrong',
           });
+
+          await this.questionRepository.update(
+            { pid: question.pid },
+            { incorrect_count: () => 'incorrect_count + 1' },
+          );
         }
       }),
     );

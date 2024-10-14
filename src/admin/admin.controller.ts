@@ -84,7 +84,6 @@ export class AdminController {
         );
       }
 
-      // 如果是专业课，必须提供 profession_id 和 profession_name
       if (course === 2 && (!profession_id || !profession_name)) {
         return ApiResponseUtil.error(
           400,
@@ -101,13 +100,12 @@ export class AdminController {
         );
       }
 
-      // 3. 身份证解密并使用 Base64 混淆
       let base64IdNumber: string | null = null;
       if (id_number) {
         try {
           const decryptedIdNumber =
-            await this.cryptoUtil.decryptWithSM2(id_number); // 使用SM2解密身份证号
-          base64IdNumber = Buffer.from(decryptedIdNumber).toString('base64'); // Base64 混淆
+            await this.cryptoUtil.decryptWithSM2(id_number);
+          base64IdNumber = Buffer.from(decryptedIdNumber).toString('base64');
         } catch (err) {
           return ApiResponseUtil.error(
             500,
@@ -117,7 +115,6 @@ export class AdminController {
         }
       }
 
-      // 4. 根据 request_type 操作 request_info 表
       if (request_type === 'add') {
         const existingRequest = await this.requestInfoRepository.findOne({
           where: { course, subject },
@@ -131,19 +128,17 @@ export class AdminController {
           );
         }
 
-        // 新增记录
         const newRequestInfo = this.requestInfoRepository.create({
           course,
           subject: course === 2 ? subject : null,
           profession_id: course === 2 ? profession_id : null,
           profession_name: course === 2 ? profession_name : null,
-          id_number: base64IdNumber, // 存入Base64混淆后的身份证号
+          id_number: base64IdNumber,
         });
 
         await this.requestInfoRepository.save(newRequestInfo);
         return ApiResponseUtil.success(200, { status: '新增成功' });
       } else if (request_type === 'modify') {
-        // 查找要修改的记录
         const requestInfo = await this.requestInfoRepository.findOne({
           where: { course, subject },
         });
@@ -151,10 +146,10 @@ export class AdminController {
           return ApiResponseUtil.error(404, 'not_found', '未找到相关记录');
         }
 
-        // 根据传入的内容进行修改
         if (id_number) {
           requestInfo.id_number = base64IdNumber;
         }
+
         if (profession_name) {
           requestInfo.profession_name = profession_name;
         }
@@ -162,7 +157,6 @@ export class AdminController {
         await this.requestInfoRepository.save(requestInfo);
         return ApiResponseUtil.success(200, { status: '修改成功' });
       } else if (request_type === 'delete') {
-        // 删除记录
         const deleteResult = await this.requestInfoRepository.delete({
           course,
           subject,
@@ -192,17 +186,14 @@ export class AdminController {
     }
 
     try {
-      // 获取权限并检查
       const permission =
         await this.tokenService.getPermissionFromToken(access_token);
       if (permission < 10) {
         return ApiResponseUtil.error(403, 'permission_denied', '权限不足');
       }
 
-      // 从请求体中获取 course 和 subject
       const { course, subject, times } = body;
 
-      // 验证 course
       if (course !== 1 && course !== 2) {
         return ApiResponseUtil.error(
           400,
@@ -211,7 +202,6 @@ export class AdminController {
         );
       }
 
-      // 从 request_info 表中获取相关信息
       const requestInfo = await this.requestInfoRepository.findOne({
         where: { course, subject },
       });
@@ -224,22 +214,18 @@ export class AdminController {
         );
       }
 
-      // Base64 解码身份证号
       const decodedIdNumber = Buffer.from(
         requestInfo.id_number,
         'base64',
       ).toString();
 
-      // 设置爬取次数，默认从 config 中获取
       const requestTimesPerRound = parseInt(
         times || config().database.requestTimesPerRound,
         10,
       );
 
-      // 开始计时
       const startTime = Date.now();
 
-      // 爬取题目并存储
       let isParseSuccess = true;
       for (let i = 0; i < requestTimesPerRound; i++) {
         const parseResult = await this.questionService.processQuestions(
@@ -247,17 +233,14 @@ export class AdminController {
           decodedIdNumber,
         );
 
-        // 判断能否解析
         if (!parseResult) {
           isParseSuccess = false;
         }
       }
 
-      // 结束计时
       const endTime = Date.now();
       const elapsedTime = endTime - startTime;
 
-      // 保存请求日志到 request_log 表
       const requestLog = this.requestLogRepository.create({
         round: requestTimesPerRound,
         consuming: new Date(),
@@ -269,7 +252,6 @@ export class AdminController {
 
       await this.requestLogRepository.save(requestLog);
 
-      // 返回爬取结果
       return ApiResponseUtil.success(200, {
         crawl_time: requestTimesPerRound,
         elapsed_time: elapsedTime,

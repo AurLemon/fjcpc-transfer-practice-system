@@ -49,7 +49,7 @@ export class QuestionController {
 
     const sortOrder = order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    const { questions, nextPid, prevPid, stat } =
+    const { questions, nextPid, prevPid, stat, sequence } =
       await this.questionService.getPracticeQuestions(
         courseNumber,
         subjectNumber,
@@ -67,10 +67,12 @@ export class QuestionController {
         next_pid: null,
         prev_pid: null,
         stat,
+        sequence: [],
       });
     }
 
     return ApiResponseUtil.success(200, {
+      sequence,
       questions,
       next_pid: nextPid,
       prev_pid: prevPid,

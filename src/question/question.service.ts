@@ -2,7 +2,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { isEqual } from 'lodash';
 
 import { Question } from '../database/entities/question.entity';
@@ -10,6 +10,7 @@ import { UpdatedQuestion } from '../database/entities/updated_question.entity';
 import { RequestInfo } from '../database/entities/request_info.entity';
 
 import { fetchExamQuestions } from '../api/api';
+import config from '../config/config';
 
 @Injectable()
 export class QuestionService {
@@ -292,13 +293,20 @@ export class QuestionService {
       });
     }
 
+    const examTime = config().exam_info.exam_time;
+    const examTrust = config().exam_info.exam_trust;
+
     return {
       cultural_lesson: culturalLessonStat,
       profession_lesson: professionLessonStat,
+      exam_info: {
+        exam_time: examTime,
+        exam_trust: examTrust,
+      },
     };
   }
 
-  // 刷题接口
+  // 刷题信息
   async getPracticeQuestions(
     course: number,
     subject: number,
@@ -309,15 +317,18 @@ export class QuestionService {
     prevPagePid?: string,
     index: number = 0,
   ): Promise<{
+    sequence: string[];
     questions: Question[];
     nextPid: string | null;
     prevPid: string | null;
     stat: any;
   }> {
-    const pageSize = 5;
+    const pageSize = 10;
 
+    // 构建基础查询条件
     const baseQueryBuilder = this.questionsRepository
       .createQueryBuilder('question')
+      .select(['question.pid'])
       .where('question.course = :course', { course });
 
     if (subject !== -1) {
@@ -328,246 +339,73 @@ export class QuestionService {
       baseQueryBuilder.andWhere('question.type = :type', { type });
     }
 
-    const totalQuestions = await baseQueryBuilder.getCount();
+    sortColumn =
+      sortColumn !== 'pid' && sortColumn !== 'crawl_count' ? 'pid' : sortColumn;
 
-    let startingIndex = 0;
-    let prevPid: string | null = null;
-    let nextPid: string | null = null;
-    let questions: Question[] = [];
-    let questionsWithIndex: any[] = [];
+    const sequence = await baseQueryBuilder
+      .orderBy(`question.${sortColumn}`, order)
+      .getMany()
+      .then((results) => results.map((item) => item.pid));
+
+    const totalQuestions = sequence.length;
+    let startIndex = 0;
 
     if (nextPagePid) {
-      const cursorQuestion = await this.questionsRepository.findOne({
-        where: { pid: nextPagePid },
-      });
-      if (!cursorQuestion) {
+      const currentIndex = sequence.indexOf(nextPagePid);
+      if (currentIndex === -1) {
         throw new Error(`Invalid nextPagePid: ${nextPagePid}`);
       }
-      const cursorSortValue = cursorQuestion[sortColumn];
-
-      let count: number;
-      if (order === 'ASC') {
-        count = await baseQueryBuilder
-          .clone()
-          .andWhere(
-            `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
-            {
-              cursorSortValue,
-              cursorPid: nextPagePid,
-            },
-          )
-          .getCount();
-        // Adjust startingIndex to avoid skipping the cursor
-        startingIndex = count + 2;
-      } else {
-        count = await baseQueryBuilder
-          .clone()
-          .andWhere(
-            `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
-            {
-              cursorSortValue,
-              cursorPid: nextPagePid,
-            },
-          )
-          .getCount();
-        // Adjust startingIndex to avoid skipping the cursor
-        startingIndex = count + 2;
-      }
-
-      const queryBuilder = baseQueryBuilder.clone();
-      if (order === 'ASC') {
-        queryBuilder.andWhere(
-          `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
-          {
-            cursorSortValue,
-            cursorPid: nextPagePid,
-          },
-        );
-      } else {
-        queryBuilder.andWhere(
-          `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
-          {
-            cursorSortValue,
-            cursorPid: nextPagePid,
-          },
-        );
-      }
-
-      queryBuilder
-        .orderBy(`question.${sortColumn}`, order)
-        .addOrderBy('question.pid', order);
-
-      questions = await queryBuilder.take(pageSize).getMany();
-
-      if (questions.length > 0) {
-        nextPid =
-          questions.length === pageSize
-            ? questions[questions.length - 1].pid
-            : null;
-        prevPid = questions[0].pid;
-      }
-
-      questionsWithIndex = questions.map((question, i) => ({
-        index: startingIndex + i,
-        ...question,
-      }));
-
-      return {
-        questions: questionsWithIndex,
-        nextPid,
-        prevPid,
-        stat: {
-          course,
-          subject,
-          type,
-          order,
-          sort_column: sortColumn,
-          total_questions: totalQuestions,
-        },
-      };
-    }
-
-    if (prevPagePid) {
-      const cursorQuestion = await this.questionsRepository.findOne({
-        where: { pid: prevPagePid },
-      });
-      if (!cursorQuestion) {
+      startIndex = currentIndex + 1;
+    } else if (prevPagePid) {
+      const currentIndex = sequence.indexOf(prevPagePid);
+      if (currentIndex === -1) {
         throw new Error(`Invalid prevPagePid: ${prevPagePid}`);
       }
-      const cursorSortValue = cursorQuestion[sortColumn];
-
-      let count: number;
-      if (order === 'ASC') {
-        count = await baseQueryBuilder
-          .clone()
-          .andWhere(
-            `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
-            {
-              cursorSortValue,
-              cursorPid: prevPagePid,
-            },
-          )
-          .getCount();
-        // Adjust startingIndex for previous page
-        startingIndex = count - pageSize + 1;
-        if (startingIndex < 1) startingIndex = 1;
-      } else {
-        count = await baseQueryBuilder
-          .clone()
-          .andWhere(
-            `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
-            {
-              cursorSortValue,
-              cursorPid: prevPagePid,
-            },
-          )
-          .getCount();
-        // Adjust startingIndex for previous page
-        startingIndex = count - pageSize + 1;
-        if (startingIndex < 1) startingIndex = 1;
-      }
-
-      const queryBuilder = baseQueryBuilder.clone();
-      if (order === 'ASC') {
-        queryBuilder.andWhere(
-          `question.${sortColumn} < :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid < :cursorPid)`,
-          {
-            cursorSortValue,
-            cursorPid: prevPagePid,
-          },
-        );
-      } else {
-        queryBuilder.andWhere(
-          `question.${sortColumn} > :cursorSortValue OR (question.${sortColumn} = :cursorSortValue AND question.pid > :cursorPid)`,
-          {
-            cursorSortValue,
-            cursorPid: prevPagePid,
-          },
-        );
-      }
-
-      queryBuilder
-        .orderBy(`question.${sortColumn}`, order === 'ASC' ? 'DESC' : 'ASC')
-        .addOrderBy('question.pid', order === 'ASC' ? 'DESC' : 'ASC');
-
-      questions = await queryBuilder.take(pageSize).getMany();
-
-      questions.reverse();
-
-      if (questions.length > 0) {
-        nextPid =
-          questions.length === pageSize
-            ? questions[questions.length - 1].pid
-            : null;
-        prevPid = startingIndex > 1 ? questions[0].pid : null;
-      }
-
-      questionsWithIndex = questions.map((question, i) => ({
-        index: startingIndex + i,
-        ...question,
-      }));
-
-      return {
-        questions: questionsWithIndex,
-        nextPid,
-        prevPid,
-        stat: {
-          course,
-          subject,
-          type,
-          order,
-          sort_column: sortColumn,
-          total_questions: totalQuestions,
-        },
-      };
+      startIndex = currentIndex - pageSize;
+      if (startIndex < 0) startIndex = 0;
+    } else if (index > 0) {
+      startIndex = index;
     }
 
-    // Initial page without nextPagePid or prevPagePid
-    if (index >= totalQuestions) {
-      return {
-        questions: [],
-        nextPid: null,
-        prevPid: null,
-        stat: {
-          course,
-          subject,
-          type,
-          order,
-          sort_column: sortColumn,
-          total_questions: totalQuestions,
-        },
-      };
-    }
+    // 确保 startIndex 在合理范围内
+    if (startIndex < 0) startIndex = 0;
+    if (startIndex > totalQuestions) startIndex = totalQuestions;
 
-    const initialQueryBuilder = baseQueryBuilder
-      .clone()
-      .orderBy(`question.${sortColumn}`, order)
-      .addOrderBy('question.pid', order)
-      .skip(index)
-      .take(pageSize);
+    // 获取当前页的 pid 列表
+    const pagePids = sequence.slice(startIndex, startIndex + pageSize);
 
-    const initialQuestions = await initialQueryBuilder.getMany();
+    // 查询当前页的题目详情
+    const questions = await this.questionsRepository.find({
+      where: { pid: In(pagePids) },
+    });
 
-    const questionsWithIndexInitial = initialQuestions.map((question, i) => ({
-      index: index + i + 1,
+    // 确保题目按 sequence 顺序排列
+    const pidOrderMap = new Map(pagePids.map((pid, idx) => [pid, idx]));
+    questions.sort((a, b) => {
+      const indexA = pidOrderMap.get(a.pid) ?? 0;
+      const indexB = pidOrderMap.get(b.pid) ?? 0;
+      return indexA - indexB;
+    });
+
+    // 设置 nextPid 和 prevPid
+    const lastPid = pagePids[pagePids.length - 1] || null;
+    const firstPid = pagePids[0] || null;
+
+    const nextPidValue =
+      startIndex + pageSize < totalQuestions ? lastPid : null;
+    const prevPidValue = startIndex > 0 ? firstPid : null;
+
+    // 生成带有序号的题目
+    const questionsWithIndex = questions.map((question, i) => ({
+      index: startIndex + i + 1,
       ...question,
     }));
 
-    nextPid =
-      initialQuestions.length === pageSize
-        ? initialQuestions[initialQuestions.length - 1].pid
-        : null;
-    prevPid =
-      index > 0
-        ? initialQuestions.length > 0
-          ? initialQuestions[0].pid
-          : null
-        : null;
-
     return {
-      questions: questionsWithIndexInitial,
-      nextPid,
-      prevPid,
+      sequence,
+      questions: questionsWithIndex,
+      nextPid: nextPidValue,
+      prevPid: prevPidValue,
       stat: {
         course,
         subject,
