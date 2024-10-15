@@ -25,7 +25,8 @@ interface StarProgressData {
 export const useUserStore = defineStore('user', {
     state: () => ({
         login: {
-            isLogged: false
+            isLogged: false,
+            refreshing: false
         },
         profile: {
             name: '',
@@ -90,7 +91,7 @@ export const useUserStore = defineStore('user', {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
                         this.fetchUserProgress()
-                    } else if (response.data.data.type === 'token_not_exist') {
+                    } else if (response.data.data.type === 'token_not_exist' && !this.login.refreshing) {
                         this.login.isLogged = false
                     }
                 }
@@ -260,7 +261,7 @@ export const useUserStore = defineStore('user', {
                     if (response.data.data.type === 'expiry_token') {
                         await authStore.refreshTokenAndRetry()
                         await this.fetchStarProgress()
-                    } else if (response.data.data.type === 'token_not_exist') {
+                    } else if (response.data.data.type === 'token_not_exist' && !this.login.refreshing) {
                         this.login.isLogged = false
                     }
                 }

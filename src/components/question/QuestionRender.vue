@@ -11,16 +11,10 @@ import { useQuestionStore } from '@/stores/question'
 import { useNotifyStore } from '@/stores/notify'
 import { useCardStore } from '@/stores/card'
 
-/**
- * Pinia 状态
- */
 const userStore = useUserStore()
 const questionStore = useQuestionStore()
 const notifyStore = useNotifyStore()
 
-/**
- * TypeScript 定义
- */
 interface UserSetting {
     course: number
     subject: number
@@ -76,9 +70,6 @@ interface QuestionsResponse {
     }
 }
 
-/**
- * 定义数据
- */
 const userSetting = ref<UserSetting>({
     course: 1,
     subject: -1,
@@ -121,8 +112,8 @@ const reloadCount = ref<number>(0)
 const isSheetsActive = ref<boolean>(false)
 const questionRefs = ref<(HTMLElement | null)[]>([])
 
-const minIndex = ref(1)
-const maxIndex = ref(1)
+const minIndex = ref<number>(1)
+const maxIndex = ref<number>(1)
 
 const userChoice = ref<string[] | string[][]>([])
 
@@ -133,9 +124,6 @@ const showQuestionDetail = ref<boolean>(false)
 
 const isFirstLoad = ref<boolean>(true)
 
-/**
- * 用户数据
- */
 const saveUserSetting = (): void => {
     localStorage.setItem('user_setting', JSON.stringify(userSetting.value))
 }
@@ -154,9 +142,6 @@ if (savedSetting !== null) {
     userSetting.value = savedSetting
 }
 
-/**
- * 题目状态
- */
 const updateDone = async () => {
     if (!currentQuestion.value) {
         return
@@ -191,9 +176,6 @@ const updateBookmark = async () => {
     isMark.value = !isMark.value
 }
 
-/**
- * 渲染题目
- */
 const renderQuestionCourse = (course: number) => {
     if (course === 1) {
         return '文化基础'
@@ -236,9 +218,6 @@ const renderQuestionType = (type: number) => {
     }
 }
 
-/**
- * 逻辑
- */
 const addQuestion = (newQuestions: any[]) => {
     newQuestions.forEach((newQuestion) => {
         const exists = questions.value.some((q) => q.index === newQuestion.index)
@@ -603,9 +582,6 @@ watch(
     { immediate: true }
 )
 
-/**
- * 转换
- */
 const formatMileTimestamp = (timestamp: string | number): string => {
     return dayjs(Number(timestamp)).format('YYYY-MM-DD HH:mm:ss')
 }
@@ -618,9 +594,6 @@ const questionAccuracy = (done: number, incorrect: number): number => {
     return Number(((done - incorrect) / done).toFixed(2)) * 100
 }
 
-/**
- * Hooks
- */
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown)
     getQuestions()
@@ -657,7 +630,7 @@ onBeforeUnmount(() => {
                         class="question-render-info__sheet"
                         v-for="n in questionsInfo?.total_questions"
                         :key="n"
-                        :ref="(el) => questionRefs[n - 1] = el"
+                        :ref="(el) => (questionRefs[n - 1] = el)"
                         :class="{ current: currentId === n, done: doneStatus.includes(sequence[n - 1]) }"
                         @click="toQuestionByIndex(n)"
                         :pid="sequence[n - 1]"

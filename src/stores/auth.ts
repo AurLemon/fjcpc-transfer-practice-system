@@ -65,6 +65,9 @@ export const useAuthStore = defineStore('auth', {
             }
         },
         async refreshTokenAndRetry() {
+            const userStore = useUserStore()
+            userStore.login.refreshing = true
+
             if (this.isTokenRefreshing) {
                 return
             }
@@ -98,6 +101,7 @@ export const useAuthStore = defineStore('auth', {
                 this.isLoading = false
                 setTimeout(() => {
                     this.isTokenRefreshing = false
+                    userStore.login.refreshing = true
                 }, 1500)
             }
         }
