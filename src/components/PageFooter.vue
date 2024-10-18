@@ -28,7 +28,7 @@
     font-size: 12px;
     max-width: var(--page-common-width);
     margin: 0 auto;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 
     .page-footer-copyright {
         text-align: center;
@@ -76,7 +76,7 @@
 
 @include screen.media-screen(mobile) {
     .page-footer {
-        margin: 0 1rem 3rem 1rem;
+        margin: 0 1rem 1rem 1rem;
 
         .page-footer-project {
             width: 100%;

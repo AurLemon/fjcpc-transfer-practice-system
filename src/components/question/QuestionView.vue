@@ -124,7 +124,7 @@ const showQuestionDetail = ref<boolean>(false)
 
 const isFirstLoad = ref<boolean>(true)
 
-const renderMode = ref<string>('list')
+const renderMode = ref<string>('single')
 
 const saveUserSetting = (): void => {
     localStorage.setItem('user_setting', JSON.stringify(userSetting.value))
@@ -142,40 +142,6 @@ const savedSetting = readUserSetting()
 
 if (savedSetting !== null) {
     userSetting.value = savedSetting
-}
-
-const updateDone = async () => {
-    if (!currentQuestion.value) {
-        return
-    }
-
-    if (isDone.value) {
-        await userStore.deleteProgress(currentQuestion.value.pid)
-    } else {
-        await userStore.addProgress(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
-    }
-
-    isDone.value = !isDone.value
-}
-
-const updateBookmark = async () => {
-    if (!currentQuestion.value) {
-        return
-    }
-
-    if (isMark.value) {
-        userStore.deleteStar(currentQuestion.value.pid).catch(() => {
-            isMark.value = true
-        })
-    } else {
-        await userStore
-            .addStar(currentQuestion.value.pid, currentQuestion.value.course, currentQuestion.value.subject, currentQuestion.value.course)
-            .catch(() => {
-                isMark.value = false
-            })
-    }
-
-    isMark.value = !isMark.value
 }
 
 const renderQuestionCourse = (course: number) => {
@@ -505,16 +471,6 @@ const renderAnswerNumber = (type: number, answer: string[] | string[][], options
 const checkAnswer = () => {
     showAnswer.value = true
     isAnswerCorrect.value = checkAnswerCorrect() ? true : false
-
-    // 没做过这题、设置开启自动保存进度
-    if (!isDone.value && userStore.setting.auto_save_progress) {
-        updateDone()
-    }
-
-    // 没被收藏过、做错了、设置开启自动收藏错题
-    if (!isMark.value && !isAnswerCorrect.value && userStore.setting.auto_star_question) {
-        updateBookmark()
-    }
 }
 
 const showQuestionAnswer = () => {
@@ -608,97 +564,100 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="question-render-wrapper" :class="{ loading: isLoadQuestion && questions.length <= 0 }">
-        <div class="question-render-info" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
-            <div class="question-render-info__subject">{{ renderQuestionCourse(questionsInfo?.course) }}</div>
-            <div class="question-render-info__status">
-                <div class="question-render-info__direction question-render-info__previous" @click="prevQuestion">
-                    <span class="material-icons">keyboard_arrow_left</span>
+        <div class="question-single-mode question-mode" v-if="renderMode === 'single'">
+            <div class="question-render-info" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
+                <div class="question-render-info__subject">{{ renderQuestionCourse(questionsInfo?.course) }}</div>
+                <div class="question-render-info__status">
+                    <div class="question-render-info__direction question-render-info__previous" @click="prevQuestion">
+                        <span class="material-icons">keyboard_arrow_left</span>
+                    </div>
+                    <div class="question-render-info__current">
+                        <span class="now">{{ currentQuestion?.index }}</span
+                        >/<span class="max">{{ questionsInfo?.total_questions }}</span>
+                    </div>
+                    <div class="question-render-info__direction question-render-info__next" @click="nextQuestion">
+                        <span class="material-icons">keyboard_arrow_right</span>
+                    </div>
                 </div>
-                <div class="question-render-info__current">
-                    <span class="now">{{ currentQuestion?.index }}</span
-                    >/<span class="max">{{ questionsInfo?.total_questions }}</span>
+                <div class="question-render-info__id" @click="activeSheets" v-tippy="{ appendTo: 'parent', content: '题目在船政系统里面的编号' }">
+                    {{ currentQuestion?.pid }}
                 </div>
-                <div class="question-render-info__direction question-render-info__next" @click="nextQuestion">
-                    <span class="material-icons">keyboard_arrow_right</span>
-                </div>
-            </div>
-            <div class="question-render-info__id" @click="activeSheets" v-tippy="{ appendTo: 'parent', content: '题目在船政系统里面的编号' }">
-                {{ currentQuestion?.pid }}
-            </div>
-            <div class="question-render-info__sheets" :class="{ active: isSheetsActive }">
-                <div class="question-render-info__title">答题卡</div>
-                <div class="question-render-info__wrapper">
-                    <div
-                        class="question-render-info__sheet"
-                        v-for="n in questionsInfo?.total_questions"
-                        :key="n"
-                        :ref="(el) => (questionRefs[n - 1] = el)"
-                        :class="{ current: currentId === n, done: doneStatus.includes(sequence[n - 1]) }"
-                        @click="toQuestionByIndex(n)"
-                        :pid="sequence[n - 1]"
-                    >
-                        {{ n }}
+                <div class="question-render-info__sheets" :class="{ active: isSheetsActive }">
+                    <div class="question-render-info__title">答题卡</div>
+                    <div class="question-render-info__wrapper">
+                        <div
+                            class="question-render-info__sheet"
+                            v-for="n in questionsInfo?.total_questions"
+                            :key="n"
+                            :ref="(el) => (questionRefs[n - 1] = el)"
+                            :class="{ current: currentId === n, done: doneStatus.includes(sequence[n - 1]) }"
+                            @click="toQuestionByIndex(n)"
+                            :pid="sequence[n - 1]"
+                        >
+                            {{ n }}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="question-render-questions">
-            <div class="question-render-question" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
-                <div class="question-loading-near" v-if="isLoadQuestion && questions.length > 0">
-                    {{ minIndex }} ~ {{ maxIndex }}<span class="material-icons">autorenew</span>
-                </div>
-                <div class="question-type">
-                    {{ renderQuestionType(currentQuestion?.type ?? 0) }}
-                </div>
-                <div class="question-content" v-html="currentQuestion?.content"></div>
-                <div class="question-options" v-if="currentQuestion && currentQuestion.options">
-                    <div
-                        class="question-option"
-                        v-for="option in currentQuestion?.options"
-                        :key="option.id"
-                        @click="addChoice(option.id)"
-                        :class="{
-                            selected: Array.isArray(userChoice) && userChoice.flat().includes(option.id.toString()),
-                            answer: showAnswer && currentQuestion.answer.includes(option.id.toString()),
-                            error:
-                                showAnswer &&
-                                !currentQuestion.answer.includes(option.id.toString()) &&
-                                Array.isArray(userChoice) &&
-                                userChoice.flat().includes(option.id.toString())
-                        }"
-                    >
-                        <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
-                        <div class="question-option-content" v-html="option.txt"></div>
+            <div class="question-render-questions">
+                <div class="question-render-question" v-if="(!isLoadQuestion || questions.length > 0) && currentQuestion">
+                    <div class="question-loading-near" v-if="isLoadQuestion && questions.length > 0">
+                        {{ minIndex }} ~ {{ maxIndex }}<span class="material-icons">autorenew</span>
                     </div>
-                </div>
-                <div class="question-sub-options" v-else>
-                    <div class="question-sub-option" v-for="(sub_option, index) in currentQuestion?.sub_options" :key="index">
-                        <div class="question-sub-option__content" v-html="sub_option.tg"></div>
+                    <div class="question-type">
+                        {{ renderQuestionType(currentQuestion?.type ?? 0) }}
+                    </div>
+                    <div class="question-content" v-html="currentQuestion?.content"></div>
+                    <div class="question-options" v-if="currentQuestion && currentQuestion.options">
                         <div
                             class="question-option"
-                            v-for="option in sub_option.list"
+                            v-for="option in currentQuestion?.options"
                             :key="option.id"
-                            @click="addChoice(option.id, 'sub_options', index + 1)"
+                            @click="addChoice(option.id)"
                             :class="{
-                                selected: Array.isArray(userChoice[index]) && userChoice[index].includes(option.id.toString()),
-                                answer: showAnswer && currentQuestion.answer[index].includes(option.id.toString()),
+                                selected: Array.isArray(userChoice) && userChoice.flat().includes(option.id.toString()),
+                                answer: showAnswer && currentQuestion.answer.includes(option.id.toString()),
                                 error:
                                     showAnswer &&
-                                    !currentQuestion.answer[index].includes(option.id.toString()) &&
-                                    userChoice[index] &&
-                                    userChoice[index].includes(option.id.toString())
+                                    !currentQuestion.answer.includes(option.id.toString()) &&
+                                    Array.isArray(userChoice) &&
+                                    userChoice.flat().includes(option.id.toString())
                             }"
                         >
                             <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
                             <div class="question-option-content" v-html="option.txt"></div>
                         </div>
                     </div>
+                    <div class="question-sub-options" v-else>
+                        <div class="question-sub-option" v-for="(sub_option, index) in currentQuestion?.sub_options" :key="index">
+                            <div class="question-sub-option__content" v-html="sub_option.tg"></div>
+                            <div
+                                class="question-option"
+                                v-for="option in sub_option.list"
+                                :key="option.id"
+                                @click="addChoice(option.id, 'sub_options', index + 1)"
+                                :class="{
+                                    selected: Array.isArray(userChoice[index]) && userChoice[index].includes(option.id.toString()),
+                                    answer: showAnswer && currentQuestion.answer[index].includes(option.id.toString()),
+                                    error:
+                                        showAnswer &&
+                                        !currentQuestion.answer[index].includes(option.id.toString()) &&
+                                        userChoice[index] &&
+                                        userChoice[index].includes(option.id.toString())
+                                }"
+                            >
+                                <div class="question-option-number">{{ currentQuestion?.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
+                                <div class="question-option-content" v-html="option.txt"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-render-loading" v-else>
+                    <span class="material-icons">autorenew</span>
                 </div>
             </div>
-            <div class="question-render-loading" v-else>
-                <span class="material-icons">autorenew</span>
-            </div>
         </div>
+        <div class="question-list-mode question-mode" v-else></div>
         <div class="question-render-tools">
             <div class="question-answer" v-if="!isArrayEmpty(userChoice) && currentQuestion">
                 <div class="question-answer-infos">
@@ -779,10 +738,10 @@ onBeforeUnmount(() => {
                 <div class="question-render-tools__value" content="正确率" v-tippy="{ appendTo: 'parent' }">
                     {{ questionAccuracy(currentQuestion?.done_count ?? 0, currentQuestion?.incorrect_count ?? 0) + '%' }}
                 </div>
-                <div class="question-render-tools__button material-icons" @click="updateDone" content="做没做过这题" v-tippy="{ appendTo: 'parent' }">
+                <div class="question-render-tools__button material-icons" content="做没做过这题" v-tippy="{ appendTo: 'parent' }">
                     {{ isDone ? 'check_circle' : 'check_circle_outline' }}
                 </div>
-                <div class="question-render-tools__button material-icons" @click="updateBookmark" content="收藏" v-tippy="{ appendTo: 'parent' }">
+                <div class="question-render-tools__button material-icons" content="收藏" v-tippy="{ appendTo: 'parent' }">
                     {{ isMark ? 'bookmark' : 'bookmark_border' }}
                 </div>
                 <div class="question-render-tools__button material-icons" @click="showQuestionAnswer" content="显示答案" v-tippy="{ appendTo: 'parent' }">
@@ -1142,6 +1101,10 @@ onBeforeUnmount(() => {
                 user-select: none;
             }
         }
+    }
+
+    .question-mode {
+        flex: 1;
     }
 
     .question-render-tools {
