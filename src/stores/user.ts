@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { get, post } from '@/api/api'
 
 import { getUserProgress, setUserProgress, checkQuestionExists, getProgressCount } from '@/idb/user_progress.db'
-import { setStarProgress, checkStarExists, addItemToFolder, removeItemFromFolder } from '@/idb/star_questions.db'
+import { setStarProgress, checkStarExists, addItemToFolder, removeItemFromFolder, getFolderContent } from '@/idb/star_questions.db'
 
 import { useAuthStore } from './auth'
 import { useQuestionStore } from './question'
@@ -372,6 +372,14 @@ export const useUserStore = defineStore('user', {
             } catch (err) {
                 notifyStore.addMessage('failed', `删除收藏时服务器异常（${err}）`)
                 return false
+            }
+        },
+        async getFolderContent(folderName: string = 'wrong'): Promise<StarItem[]> {
+            try {
+                const folderContent = await getFolderContent(folderName)
+                return folderContent
+            } catch (err) {
+                return []
             }
         }
     }

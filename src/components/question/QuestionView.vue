@@ -174,45 +174,18 @@ if (savedRenderMode !== null && (savedRenderMode == 'list' || savedRenderMode ==
 }
 
 const renderQuestionCourse = (course: number) => {
-    if (course === 1) {
-        return '文化基础'
-    } else if (course === 2) {
-        return '专业基础'
-    }
+    const result = questionStore.renderQuestionCourse(course)
+    return result
 }
 
 const renderQuestionSubject = (course: number, subject: number) => {
-    if (subject === -1) {
-        return renderQuestionCourse(course)
-    }
-
-    if (course === 1) {
-        switch (subject) {
-            case 1:
-                return '语文'
-            case 2:
-                return '数学'
-            case 3:
-                return '英语'
-            case 4:
-                return '政治'
-        }
-    } else if (course === 2) {
-        return questionStore.questionInfo.profession_lesson.find((item) => item.subject === subject)?.name || null
-    }
+    const result = questionStore.renderQuestionSubject(course, subject)
+    return result
 }
 
 const renderQuestionType = (type: number) => {
-    switch (type) {
-        case 0:
-            return '单选题'
-        case 1:
-            return '多选题'
-        case 2:
-            return '判断题'
-        case 8:
-            return '阅读题'
-    }
+    const result = questionStore.renderQuestionType(type)
+    return result
 }
 
 const addQuestion = (newQuestions: any[]) => {

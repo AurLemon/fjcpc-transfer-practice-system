@@ -26,11 +26,17 @@ export async function getStarProgressFolders(): Promise<string[]> {
     return allFolders as string[]
 }
 
-export async function getFolderContent(folderName: string = 'wrong'): Promise<string[]> {
+export async function getFolderContent(folderName: string = 'wrong'): Promise<StarItem[]> {
     const db = await dbPromise
     const tx = (await db).transaction('star_questions', 'readonly')
     const store = tx.objectStore('star_questions')
-    const folder = await store.get(folderName)
+    let folder = await store.get(folderName)
+
+    if (!folder) {
+        console.warn(`Folder "${folderName}" does not exist, defaulting to "wrong".`)
+        folder = await store.get('wrong')
+    }
+
     return folder ? folder.items : []
 }
 
