@@ -505,12 +505,10 @@ const checkAnswer = () => {
     showAnswer.value = true
     isAnswerCorrect.value = checkAnswerCorrect() ? true : false
 
-    // 没做过这题、设置开启自动保存进度
     if (!isDone.value && userStore.setting.auto_save_progress) {
         updateDone()
     }
 
-    // 没被收藏过、做错了、设置开启自动收藏错题
     if (!isMark.value && !isAnswerCorrect.value && userStore.setting.auto_star_question) {
         updateBookmark()
     }

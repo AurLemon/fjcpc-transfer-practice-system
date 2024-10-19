@@ -132,6 +132,7 @@ const changeRenderMode = (mode: string) => {
     }
 
     renderMode.value = mode
+    saveRenderMode()
 }
 
 const saveUserSetting = (): void => {
@@ -150,6 +151,26 @@ const savedSetting = readUserSetting()
 
 if (savedSetting !== null) {
     userSetting.value = savedSetting
+}
+
+const saveRenderMode = (): void => {
+    localStorage.setItem('view_render_mode', JSON.stringify(renderMode.value))
+}
+
+const readRenderMode = (): string | null => {
+    const response: string | null = localStorage.getItem('view_render_mode')
+    if (response === null) {
+        return null
+    }
+    return JSON.parse(response)
+}
+
+const savedRenderMode = readRenderMode()
+
+if (savedRenderMode !== null && (savedRenderMode == 'list' || savedRenderMode == 'single')) {
+    renderMode.value = savedRenderMode
+} else {
+    saveRenderMode()
 }
 
 const renderQuestionCourse = (course: number) => {
@@ -526,6 +547,15 @@ const questionAccuracy = (done: number, incorrect: number): number => {
     return Number(((done - incorrect) / done).toFixed(2)) * 100
 }
 
+const modeLoadDoneStatus = async (newVal: string = renderMode.value) => {
+    const progressData = await userStore.getAllProgress()
+    doneStatus.value = progressData.map((progress) => progress.pid)
+}
+
+watch(renderMode, (newVal) => {
+    modeLoadDoneStatus(newVal)
+})
+
 const handleListScroll = (event: any) => {
     const container = event.target as HTMLElement
     const scrollTop = container.scrollTop
@@ -557,9 +587,14 @@ const loadPreviousQuestions = (): void => {
     }
 }
 
+const isQuestionDoneProgress = (pid: string): Boolean => {
+    return doneStatus.value.includes(pid)
+}
+
 onMounted(() => {
     window.addEventListener('keydown', handleKeydown)
     getQuestions()
+    modeLoadDoneStatus()
 })
 
 onBeforeUnmount(() => {
@@ -662,9 +697,13 @@ onBeforeUnmount(() => {
         <div class="question-list-mode question-mode" v-else>
             <div class="question-render-questions" v-if="!isLoadQuestion || questions.length > 0" @scroll="handleListScroll">
                 <div class="question-render-question" v-for="question in questions" :key="question.index">
-                    <div class="question-type">{{ renderQuestionType(question.type) }}</div>
+                    <div class="question-info">
+                        <div class="question-progress material-icons">{{ isQuestionDoneProgress(question.pid) ? 'check_circle' : 'check_circle_outline' }}</div>
+                        <div class="question-index">{{ question.index }}</div>
+                        <div class="question-pid">{{ question.pid }}</div>
+                        <div class="question-type">{{ renderQuestionType(question.type) }}</div>
+                    </div>
                     <div class="question-content" v-html="question.content"></div>
-
                     <div class="question-options" v-if="question.options">
                         <div
                             class="question-option"
@@ -826,32 +865,6 @@ onBeforeUnmount(() => {
                         <div class="question-tools-info__status">
                             <div class="active" v-if="currentQuestion?.updated_time ?? false"><span class="material-icons">done</span> 已启用</div>
                             <div class="inactive" v-else><span class="material-icons">close</span> 未启用</div>
-                        </div>
-                    </div>
-                    <div class="question-tools-info__list">
-                        <div class="question-tools-info__item">
-                            <div class="question-tools-info__value">{{ currentQuestion?.crawl_count }}</div>
-                            <div class="question-tools-info__label">出现次数</div>
-                        </div>
-                        <div class="question-tools-info__item">
-                            <div class="question-tools-info__value">{{ currentQuestion?.done_count }}</div>
-                            <div class="question-tools-info__label">被完成次数</div>
-                        </div>
-                        <div class="question-tools-info__item">
-                            <div class="question-tools-info__value">{{ currentQuestion?.incorrect_count }}</div>
-                            <div class="question-tools-info__label">错误计数</div>
-                        </div>
-                        <div class="question-tools-info__item">
-                            <div class="question-tools-info__value">{{ formatMileTimestamp(currentQuestion?.created_time ?? '0') }}</div>
-                            <div class="question-tools-info__label">创建时间</div>
-                        </div>
-                        <div class="question-tools-info__item">
-                            <div class="question-tools-info__value">{{ formatMileTimestamp(currentQuestion?.updated_time ?? '0') }}</div>
-                            <div class="question-tools-info__label">更新时间</div>
-                        </div>
-                        <div class="question-tools-info__item">
-                            <div class="question-tools-info__value">{{ formatMileTimestamp(currentQuestion?.crawl_time ?? '0') }}</div>
-                            <div class="question-tools-info__label">被获取时间</div>
                         </div>
                     </div>
                 </div>
@@ -1178,6 +1191,35 @@ onBeforeUnmount(() => {
                 height: auto;
                 padding-bottom: 3rem;
                 overflow-y: unset;
+
+                .question-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    margin-bottom: 0.5rem;
+
+                    .question-progress {
+                        color: var(--color-primary);
+                        font-size: 20px;
+                        margin-right: 0.5rem;
+                    }
+
+                    .question-index {
+                        font-size: 14px;
+                        font-weight: 600;
+                    }
+
+                    .question-pid,
+                    .question-type {
+                        color: var(--color-base--subtle);
+                        font-size: 12px;
+                        border: 1px solid var(--border-color-base--darker);
+                        border-radius: 12px;
+                        padding: 2px 6px;
+                        margin-bottom: 0;
+                        background: transparent;
+                    }
+                }
             }
         }
     }
