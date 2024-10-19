@@ -117,7 +117,7 @@ const maxIndex = ref<number>(1)
 
 const userChoice = ref<string[] | string[][]>([])
 
-const showAnswer = ref<boolean>(false)
+const showAnswer = ref<boolean>(true)
 const isAnswerCorrect = ref<boolean>(false)
 
 const showQuestionDetail = ref<boolean>(false)
@@ -126,12 +126,20 @@ const isFirstLoad = ref<boolean>(true)
 
 const renderMode = ref<string>('single')
 
+const changeRenderMode = (mode: string) => {
+    if (mode !== 'single' && mode !== 'list') {
+        return
+    }
+
+    renderMode.value = mode
+}
+
 const saveUserSetting = (): void => {
-    localStorage.setItem('user_setting', JSON.stringify(userSetting.value))
+    localStorage.setItem('view_user_setting', JSON.stringify(userSetting.value))
 }
 
 const readUserSetting = (): UserSetting | null => {
-    const response: string | null = localStorage.getItem('user_setting')
+    const response: string | null = localStorage.getItem('view_user_setting')
     if (response === null) {
         return null
     }
@@ -232,32 +240,6 @@ const getQuestions = async (params?: any, callback?: any) => {
         nextPid.value = response.data.data.next_pid
         prevPid.value = response.data.data.prev_pid
 
-        if (isFirstLoad.value) {
-            for (let i = 0; i < sequence.value.length; i++) {
-                const pid = sequence.value[i]
-
-                const isDone = await userStore.isProgress(pid)
-
-                if (!isDone) {
-                    const existingQuestion = questions.value.find((q) => q.pid === pid)
-
-                    if (existingQuestion) {
-                        currentId.value = existingQuestion.index
-                        nextPid.value = pid
-                    } else {
-                        await getQuestions({ index: i + 1 }, () => {
-                            currentId.value = i + 1
-                            nextPid.value = sequence.value[i]
-                        })
-                    }
-
-                    isFirstLoad.value = false
-                    return
-                }
-            }
-            console.log(1)
-        }
-
         if (callback) {
             callback()
         }
@@ -285,7 +267,7 @@ const currentQuestion = computed(() => {
 })
 
 const resetQuestionComplete = () => {
-    showAnswer.value = false
+    showAnswer.value = true
     userChoice.value = []
 }
 
@@ -334,7 +316,8 @@ watch(isSheetsActive, (newVal) => {
             if (currentElement) {
                 currentElement.scrollIntoView({
                     behavior: 'smooth',
-                    inline: 'nearest'
+                    block: 'nearest',
+                    inline: 'start'
                 })
             }
         })
@@ -496,28 +479,19 @@ watch(
 )
 
 const handleKeydown = (event: KeyboardEvent) => {
-    const cardStore = useCardStore()
-    if (!cardStore.isViewContainerOn()) {
-        switch (event.key) {
-            case 'ArrowLeft':
-                prevQuestion()
-                break
-            case 'ArrowRight':
-                nextQuestion()
-                break
-            case 'Enter':
-                if (!showAnswer.value) {
-                    if (userChoice.value.length > 0 && currentQuestion) {
-                        checkAnswer()
-                    } else {
-                        notifyStore.addMessage('failed', '未选择答案')
-                    }
-                } else {
+    if (renderMode.value === 'single') {
+        const cardStore = useCardStore()
+        if (!cardStore.isViewContainerOn()) {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    prevQuestion()
+                    break
+                case 'ArrowRight':
                     nextQuestion()
-                }
-                break
-            default:
-                break
+                    break
+                default:
+                    break
+            }
         }
     }
 }
@@ -550,6 +524,37 @@ const questionAccuracy = (done: number, incorrect: number): number => {
     }
 
     return Number(((done - incorrect) / done).toFixed(2)) * 100
+}
+
+const handleListScroll = (event: any) => {
+    const container = event.target as HTMLElement
+    const scrollTop = container.scrollTop
+    const containerHeight = container.clientHeight
+    const contentHeight = container.scrollHeight
+
+    if (scrollTop + containerHeight >= contentHeight - 10) {
+        loadMoreQuestions()
+    }
+
+    if (scrollTop <= 10 && prevPid.value) {
+        loadPreviousQuestions()
+    }
+}
+
+const loadMoreQuestions = (): void => {
+    if (nextPid.value) {
+        debouncedGetQuestions({ next_pid: nextPid.value }, () => {
+            if (questions.value.length > 50) {
+                questions.value.splice(0, questions.value.length - 50)
+            }
+        })
+    }
+}
+
+const loadPreviousQuestions = (): void => {
+    if (prevPid.value) {
+        debouncedGetQuestions({ prev_pid: prevPid.value })
+    }
 }
 
 onMounted(() => {
@@ -613,7 +618,6 @@ onBeforeUnmount(() => {
                             class="question-option"
                             v-for="option in currentQuestion?.options"
                             :key="option.id"
-                            @click="addChoice(option.id)"
                             :class="{
                                 selected: Array.isArray(userChoice) && userChoice.flat().includes(option.id.toString()),
                                 answer: showAnswer && currentQuestion.answer.includes(option.id.toString()),
@@ -635,12 +639,10 @@ onBeforeUnmount(() => {
                                 class="question-option"
                                 v-for="option in sub_option.list"
                                 :key="option.id"
-                                @click="addChoice(option.id, 'sub_options', index + 1)"
                                 :class="{
                                     selected: Array.isArray(userChoice[index]) && userChoice[index].includes(option.id.toString()),
                                     answer: showAnswer && currentQuestion.answer[index].includes(option.id.toString()),
                                     error:
-                                        showAnswer &&
                                         !currentQuestion.answer[index].includes(option.id.toString()) &&
                                         userChoice[index] &&
                                         userChoice[index].includes(option.id.toString())
@@ -657,7 +659,61 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
-        <div class="question-list-mode question-mode" v-else></div>
+        <div class="question-list-mode question-mode" v-else>
+            <div class="question-render-questions" v-if="!isLoadQuestion || questions.length > 0" @scroll="handleListScroll">
+                <div class="question-render-question" v-for="question in questions" :key="question.index">
+                    <div class="question-type">{{ renderQuestionType(question.type) }}</div>
+                    <div class="question-content" v-html="question.content"></div>
+
+                    <div class="question-options" v-if="question.options">
+                        <div
+                            class="question-option"
+                            v-for="option in question.options"
+                            :key="option.id"
+                            :class="{
+                                selected: Array.isArray(userChoice) && userChoice.flat().includes(option.id.toString()),
+                                answer: showAnswer && question.answer.includes(option.id.toString()),
+                                error:
+                                    showAnswer &&
+                                    !question.answer.includes(option.id.toString()) &&
+                                    Array.isArray(userChoice) &&
+                                    userChoice.flat().includes(option.id.toString())
+                            }"
+                        >
+                            <div class="question-option-number">
+                                {{ question.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}
+                            </div>
+                            <div class="question-option-content" v-html="option.txt"></div>
+                        </div>
+                    </div>
+
+                    <div class="question-sub-options" v-else>
+                        <div class="question-sub-option" v-for="(sub_option, index) in question.sub_options" :key="index">
+                            <div class="question-sub-option__content" v-html="sub_option.tg"></div>
+                            <div
+                                class="question-option"
+                                v-for="option in sub_option.list"
+                                :key="option.id"
+                                :class="{
+                                    selected: Array.isArray(userChoice[index]) && userChoice[index].includes(option.id.toString()),
+                                    answer: showAnswer && question.answer[index].includes(option.id.toString()),
+                                    error:
+                                        !question.answer[index].includes(option.id.toString()) &&
+                                        userChoice[index] &&
+                                        userChoice[index].includes(option.id.toString())
+                                }"
+                            >
+                                <div class="question-option-number">{{ question.type !== 2 ? option.xx : option.txt === '对' ? 'T' : 'F' }}</div>
+                                <div class="question-option-content" v-html="option.txt"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="question-render-loading" v-else>
+                <span class="material-icons">autorenew</span>
+            </div>
+        </div>
         <div class="question-render-tools">
             <div class="question-answer" v-if="!isArrayEmpty(userChoice) && currentQuestion">
                 <div class="question-answer-infos">
@@ -684,18 +740,6 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
                 </div>
-                <button
-                    @click="checkAnswer"
-                    v-if="!showAnswer"
-                    v-tippy="{ appendTo: 'parent', content: '其实电脑上可以按左右键切题和回车键确定题目哦，点来点去有点累。' }"
-                >
-                    <span class="material-icons">library_add_check</span>
-                    检查
-                </button>
-                <button @click="nextQuestion" v-else>
-                    <span class="material-icons">fast_forward</span>
-                    下一题
-                </button>
             </div>
             <div class="question-render-tools__options">
                 <select class="question-render-tools__option" v-model="userSetting.course" content="课程类型" v-tippy="{ appendTo: 'parent' }">
@@ -735,20 +779,41 @@ onBeforeUnmount(() => {
                 </select>
             </div>
             <div class="question-render-tools__buttons">
-                <div class="question-render-tools__value" content="正确率" v-tippy="{ appendTo: 'parent' }">
-                    {{ questionAccuracy(currentQuestion?.done_count ?? 0, currentQuestion?.incorrect_count ?? 0) + '%' }}
-                </div>
-                <div class="question-render-tools__button material-icons" content="做没做过这题" v-tippy="{ appendTo: 'parent' }">
+                <div
+                    class="question-render-tools__button non-clickable material-icons"
+                    v-if="renderMode === 'single'"
+                    content="做没做过这题"
+                    v-tippy="{ appendTo: 'parent' }"
+                >
                     {{ isDone ? 'check_circle' : 'check_circle_outline' }}
                 </div>
-                <div class="question-render-tools__button material-icons" content="收藏" v-tippy="{ appendTo: 'parent' }">
+                <div
+                    class="question-render-tools__button non-clickable material-icons"
+                    v-if="renderMode === 'single'"
+                    content="收藏"
+                    v-tippy="{ appendTo: 'parent' }"
+                >
                     {{ isMark ? 'bookmark' : 'bookmark_border' }}
                 </div>
                 <div class="question-render-tools__button material-icons" @click="showQuestionAnswer" content="显示答案" v-tippy="{ appendTo: 'parent' }">
                     {{ showAnswer ? 'circle' : 'block' }}
                 </div>
-                <div class="question-render-tools__button material-icons" @click="updateQuestionDetail" content="题目信息" v-tippy="{ appendTo: 'parent' }">
+                <div
+                    class="question-render-tools__button material-icons"
+                    v-if="renderMode === 'single'"
+                    @click="updateQuestionDetail"
+                    content="题目信息"
+                    v-tippy="{ appendTo: 'parent' }"
+                >
                     more_vert
+                </div>
+                <div class="question-render-tools__switch">
+                    <div class="material-icons-round single-mode" :class="{ 'current-mode': renderMode === 'single' }" @click="changeRenderMode('single')">
+                        space_dashboard
+                    </div>
+                    <div class="material-icons-round list-mode" :class="{ 'current-mode': renderMode === 'list' }" @click="changeRenderMode('list')">
+                        line_style
+                    </div>
                 </div>
                 <div class="question-tools-info" :class="{ active: showQuestionDetail }">
                     <div class="question-tools-info__pid">
@@ -996,6 +1061,7 @@ onBeforeUnmount(() => {
         }
 
         @import '@/assets/styles/reset_question.scss';
+
         .question-render-question {
             height: 100%;
             padding: var(--page-container-practice-margin-vertical) var(--page-container-practice-margin-horizon);
@@ -1087,24 +1153,33 @@ onBeforeUnmount(() => {
                 }
             }
         }
+    }
 
-        .question-render-loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
+    .question-render-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
 
-            .material-icons {
-                font-size: 48px;
-                animation: loading 500ms ease-in-out infinite;
-                user-select: none;
-            }
+        .material-icons {
+            font-size: 48px;
+            animation: loading 500ms ease-in-out infinite;
+            user-select: none;
         }
     }
 
     .question-mode {
-        flex: 1;
+        height: 100%;
+        overflow-y: hidden;
+
+        &.question-list-mode {
+            .question-render-questions .question-render-question {
+                height: auto;
+                padding-bottom: 3rem;
+                overflow-y: unset;
+            }
+        }
     }
 
     .question-render-tools {
@@ -1217,6 +1292,37 @@ onBeforeUnmount(() => {
             display: flex;
             align-items: center;
 
+            .question-render-tools__switch {
+                display: flex;
+                align-items: center;
+                padding: 4px 8px;
+                margin-left: 0.5rem;
+                border: 1px solid var(--border-color-base--darker);
+                border-radius: 16px;
+
+                .material-icons-round {
+                    color: var(--color-surface-4);
+                    border-radius: 50%;
+                    transition: 300ms ease;
+                    transform: scale(0.8);
+                    user-select: none;
+                    cursor: pointer;
+
+                    &:hover {
+                        color: var(--color-base--subtle);
+                    }
+
+                    &.current-mode {
+                        color: var(--color-base--subtle);
+                        transform: scale(1);
+
+                        &:hover {
+                            color: var(--color-base--emphasized);
+                        }
+                    }
+                }
+            }
+
             .question-render-tools__button {
                 color: var(--color-base--subtle);
                 padding: 4px;
@@ -1229,8 +1335,12 @@ onBeforeUnmount(() => {
                 }
 
                 &:active {
-                    transform: scale(0.9);
+                    transform: scale(0.8);
                     transition-duration: 80ms;
+                }
+
+                &.non-clickable {
+                    color: var(--color-surface-4);
                 }
             }
 

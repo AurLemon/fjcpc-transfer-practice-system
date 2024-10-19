@@ -366,7 +366,8 @@ watch(isSheetsActive, (newVal) => {
             if (currentElement) {
                 currentElement.scrollIntoView({
                     behavior: 'smooth',
-                    inline: 'nearest'
+                    block: 'nearest',
+                    inline: 'start'
                 })
             }
         })
