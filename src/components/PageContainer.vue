@@ -20,9 +20,11 @@ import PageViewContainer from './PageViewContainer.vue'
                 <router-link to="/debug" class="page-container-main-tools__button" :exact-active-class="'active'">调试</router-link>
             </div>
             <div class="page-container-main-wrapper">
-                <Transition name="route">
-                    <RouterView />
-                </Transition>
+                <router-view v-slot="{ Component }">
+                    <transition name="route">
+                        <component :is="Component" />
+                    </transition>
+                </router-view>
                 <PageViewContainer />
             </div>
         </div>
@@ -32,13 +34,21 @@ import PageViewContainer from './PageViewContainer.vue'
 <style lang="scss" scoped>
 .route-enter-active,
 .route-leave-active {
-    transition: 300ms ease;
+    transition:
+        opacity 200ms ease,
+        transform 200ms ease;
 }
 
 .route-enter-from,
-.enter-leave-to {
+.route-leave-to {
     transform: translateX(-20px);
     opacity: 0;
+}
+
+.route-enter-to,
+.route-leave-from {
+    transform: translateX(0);
+    opacity: 1;
 }
 </style>
 
