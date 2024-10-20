@@ -27,14 +27,18 @@ export default defineComponent({
         }
     },
     methods: {
-        async openFolder(folderName: string): Promise<void> {
-            this.showFolderItem = true
-            this.currentFolder = folderName
-            this.folderContent = await this.getFolderContent(folderName)
+        openFolder(folderName: string): void {
+            setTimeout(async () => {
+                this.showFolderItem = true
+                this.currentFolder = folderName
+                this.folderContent = await this.getFolderContent(folderName)
+            }, 50)
         },
         exitFolder(): void {
-            this.showFolderItem = false
-            this.currentFolder = ''
+            setTimeout(() => {
+                this.showFolderItem = false
+                this.currentFolder = ''
+            }, 50)
         },
         getCurrentFolderLabel(folderName: string): string {
             const folderItem = this.folder.find((item) => {
@@ -66,6 +70,11 @@ export default defineComponent({
             const questionStore = useQuestionStore()
             const result = questionStore.renderQuestionType(type)
             return result
+        },
+        async deleteStar(pid: string, folderName: string = 'wrong'): Promise<void> {
+            const userStore = useUserStore()
+            await userStore.deleteStar(pid)
+            this.folderContent = await this.getFolderContent(folderName)
         }
     }
 })
@@ -85,12 +94,22 @@ export default defineComponent({
         <div class="page-star-folder-item" v-else>
             <div class="page-star-folder-item__title">
                 <div class="back material-icons" @click="exitFolder">arrow_back</div>
-                <div class="label">{{ getCurrentFolderLabel(currentFolder) }}</div>
+                <div class="label">{{ getCurrentFolderLabel(currentFolder) }}（{{ folderContent.length }}）</div>
             </div>
             <div class="page-star-folder-item__container">
                 <div class="page-star-item" v-for="(item, index) in folderContent" :key="index">
                     <div class="page-star-item__title">{{ item.pid }}</div>
-                    <div class="page-star-item__content">{{ item.type }}</div>
+                    <div class="page-star-item__content">
+                        <div class="page-star-item__tag">{{ renderQuestionCourse(item.course) }}</div>
+                        <div class="page-star-item__tag">{{ renderQuestionSubject(item.course, item.subject) }}</div>
+                        <div class="page-star-item__tag">{{ renderQuestionType(item.type) }}</div>
+                    </div>
+                    <div class="page-star-item__tools">
+                        <div class="page-star-item__tool" @click="deleteStar(item.pid)">
+                            <div class="material-icons">delete</div>
+                            <div class="text">删除</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,6 +120,8 @@ export default defineComponent({
 @use '@/assets/styles/media_screen.scss' as screen;
 
 .page-star {
+    overflow-y: auto;
+
     .page-star-folder-list {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -153,7 +174,7 @@ export default defineComponent({
     .page-star-folder-item {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 1rem;
 
         .page-star-folder-item__title {
             display: flex;
@@ -165,7 +186,7 @@ export default defineComponent({
             background: var(--color-surface-2);
 
             .back {
-                font-size: 20px;
+                font-size: 18px;
                 padding: 4px;
                 border-radius: 50%;
                 user-select: none;
@@ -177,7 +198,7 @@ export default defineComponent({
                 }
 
                 &:active {
-                    transform: scale(0.98);
+                    transform: scale(0.9);
                     transition-duration: 80ms;
                 }
             }
@@ -187,6 +208,7 @@ export default defineComponent({
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-gap: 1rem;
+            margin: 0 1rem;
 
             @include screen.media-screen(pad) {
                 grid-template-columns: repeat(2, 1fr);
@@ -194,6 +216,90 @@ export default defineComponent({
 
             @include screen.media-screen(phone) {
                 grid-template-columns: repeat(1, 1fr);
+            }
+
+            .page-star-item {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 15px;
+                border: 1px solid var(--border-color-base--darker);
+                border-radius: 12px;
+
+                .page-star-item__title {
+                    font-size: 24px;
+                    font-weight: 600;
+                }
+
+                .page-star-item__content {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.25rem;
+                    color: var(--color-base--subtle);
+                    margin-bottom: 0.5rem;
+
+                    .page-star-item__tag {
+                        color: var(--color-surface-0);
+                        font-size: 10px;
+                        padding: 3px 6px;
+                        border-radius: 12px;
+                        background: var(--color-primary);
+                    }
+                }
+
+                .page-star-item__tools {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                    margin-top: auto;
+
+                    .page-star-item__tool {
+                        display: flex;
+                        align-items: center;
+                        color: var(--color-base--subtle);
+                        font-size: 13px;
+                        padding: 3px 6px;
+                        border-radius: 8px;
+                        transition: 250ms ease;
+                        user-select: none;
+                        cursor: pointer;
+
+                        .material-icons {
+                            color: var(--color-base--subtle);
+                            font-size: 20px;
+                            transition: 250ms ease;
+                        }
+
+                        .text {
+                            display: flex;
+                            align-items: center;
+                            transition: 250ms ease;
+                            width: 0px;
+                            height: 20px;
+                            overflow: hidden;
+                            white-space: nowrap;
+                        }
+
+                        &:hover {
+                            color: var(--color-base);
+                            background: var(--border-color-base);
+
+                            .material-icons {
+                                color: var(--color-base);
+                            }
+
+                            .text {
+                                width: 30px;
+                            }
+                        }
+
+                        &:active {
+                            transform: scale(0.95);
+                            transition-duration: 80ms;
+                        }
+                    }
+                }
             }
         }
     }
