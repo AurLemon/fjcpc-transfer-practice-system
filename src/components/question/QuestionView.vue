@@ -602,7 +602,7 @@ onBeforeUnmount(() => {
                             class="question-render-info__sheet"
                             v-for="n in questionsInfo?.total_questions"
                             :key="n"
-                            :ref="(el) => (questionRefs[n - 1] = el)"
+                            :ref="(el) => (questionRefs[n - 1] = el as HTMLElement)"
                             :class="{ current: currentId === n, done: doneStatus.includes(sequence[n - 1]) }"
                             @click="toQuestionByIndex(n)"
                             :pid="sequence[n - 1]"
